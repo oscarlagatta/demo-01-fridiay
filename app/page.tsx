@@ -3,8 +3,12 @@
 import { FlowDiagram } from "../components/flow-diagram"
 import PaymentSearchBox from "../components/payment-search-box"
 import { TransactionSearchProvider } from "../components/transaction-search-provider"
+import { SearchTestingPanel } from "../components/search-testing-panel"
+import { useState } from "react"
 
 export default function HomePage() {
+  const [showTesting, setShowTesting] = useState(false)
+
   return (
     <TransactionSearchProvider>
       <div className="min-h-screen bg-gray-50">
@@ -15,6 +19,12 @@ export default function HomePage() {
             <div className="flex items-center space-x-4">
               <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                 Dashboard
+              </button>
+              <button
+                onClick={() => setShowTesting(!showTesting)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                {showTesting ? "Hide Testing" : "Show Testing"}
               </button>
               <a
                 href="/node-manager"
@@ -31,6 +41,12 @@ export default function HomePage() {
           <div className="mb-6">
             <PaymentSearchBox />
           </div>
+
+          {showTesting && (
+            <div className="mb-6">
+              <SearchTestingPanel />
+            </div>
+          )}
 
           {/* Main diagram section */}
           <div className="bg-white rounded-lg border shadow-sm h-[calc(100vh-200px)]">

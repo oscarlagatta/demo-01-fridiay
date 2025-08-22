@@ -106,13 +106,34 @@ function transformApiResponse(
   id: string,
   apiResponse: GetApiV2SplunkDataGetTransactionDetailsDataResponse,
 ): TransactionApiResponse {
-  const results: SplunkTransactionDetails = [
-    {
-      source: apiResponse.source,
-      sourceType: apiResponse.sourceType,
-      _raw: apiResponse._raw,
-    },
-  ]
+  console.log("[v0] Raw API response:", apiResponse)
+
+  // Handle both single object and array responses
+  const responseArray = Array.isArray(apiResponse) ? apiResponse : [apiResponse]
+
+  console.log("[v0] Response array after normalization:", responseArray)
+
+  if (!responseArray.length || !responseArray[0]) {
+    console.log("[v0] No response data available")
+    return {
+      id,
+      results: [],
+      summary: buildSummary(id, []),
+    }
+  }
+
+  // Transform all transaction records, not just the first one
+  const results: SplunkTransactionDetails = responseArray
+    .filter((item) => item) // Remove any null/undefined items
+    .map((item) => ({
+      source: item.source,
+      sourceType: item.sourceType,
+      aitNumber: item.aitNumber,
+      aitName: item.aitName,
+      _raw: item._raw,
+    }))
+
+  console.log("[v0] Transformed results (all records):", results)
 
   const summary = buildSummary(id, results)
 
@@ -130,9 +151,22 @@ export function useTransactionSearch(defaultId = "") {
 
   const heyApiQuery = useGetSplunkUsWiresTransactionDetails(queryId)
 
+  console.log("[v0] Search hook state:", {
+    queryId,
+    enabled,
+    hasData: !!heyApiQuery.data,
+    isLoading: heyApiQuery.isLoading,
+    isFetching: heyApiQuery.isFetching,
+    isError: heyApiQuery.isError,
+    error: heyApiQuery.error,
+    rawApiResponse: heyApiQuery.data,
+  })
+
   const transformedData = useMemo(() => {
     if (!heyApiQuery.data) return undefined
-    return transformApiResponse(queryId, heyApiQuery.data)
+    const transformed = transformApiResponse(queryId, heyApiQuery.data)
+    console.log("[v0] Transformed data:", transformed)
+    return transformed
   }, [heyApiQuery.data, queryId])
 
   const query = {

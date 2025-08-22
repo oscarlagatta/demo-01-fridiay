@@ -51,55 +51,18 @@ export function TransactionDetailsTable() {
   }
 
   const getSystemName = (aitId: string) => {
-    const SYSTEM_CODE_TO_AIT: Record<string, string> = {
-      CPO: "11697",
-      "CashPro Mobile": "41107",
-      GPP: "28960",
-      "Swift Gateway": "11554",
-      B2Bi: "54071",
-      "Swift Alliance": "512",
-      GPO: "70199",
-      "CashPro Payments": "28960",
-      "FRP US": "15227",
-      RPI: "60745",
-      PSR: "31427",
-      ECS: "834",
-    }
+    if (!results) return `AIT ${aitId}`
 
-    const systemCode = Object.entries(SYSTEM_CODE_TO_AIT).find(([_, id]) => id === aitId)?.[0]
-    return systemCode || `AIT ${aitId}`
+    const matchingResult = results.find((result) => result.aitNumber === aitId)
+    return matchingResult?.aitName || `AIT ${aitId}`
   }
 
   // Filter results for the selected AIT and get all available columns
   const { tableData, columns } = useMemo(() => {
     if (!results || !selectedAitId) return { tableData: [], columns: [] }
 
-    // Find the AIT mapping to get the system code
-    const SYSTEM_CODE_TO_AIT: Record<string, string> = {
-      CPO: "11697",
-      "CashPro Mobile": "41107",
-      GPP: "28960",
-      "Swift Gateway": "11554",
-      B2Bi: "54071",
-      "Swift Alliance": "512",
-      GPO: "70199",
-      "CashPro Payments": "28960",
-      "FRP US": "15227",
-      RPI: "60745",
-      PSR: "31427",
-      ECS: "834",
-    }
-
-    // Reverse lookup to find system codes for this AIT
-    const systemCodes = Object.entries(SYSTEM_CODE_TO_AIT)
-      .filter(([_, aitId]) => aitId === selectedAitId)
-      .map(([code, _]) => code)
-
-    // Filter results that match this AIT
     const relevantResults = results.filter((detail) => {
-      const src = detail?._raw?.SMH_SOURCE
-      const dst = detail?._raw?.SMH_DEST
-      return systemCodes.includes(src || "") || systemCodes.includes(dst || "")
+      return detail.aitNumber === selectedAitId
     })
 
     const allColumns = new Set<string>()
@@ -119,9 +82,8 @@ export function TransactionDetailsTable() {
         sourceType: detail.sourceType,
       }
 
-      // Add all _raw fields to the row
       sortedColumns.forEach((column) => {
-        row[column] = rawData[column] || ""
+        row[column] = (rawData as Record<string, any>)[column] || ""
       })
 
       return row

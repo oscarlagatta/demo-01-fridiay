@@ -124,14 +124,16 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   })
 
   return (
-    <Card className={getCardClassName()} onClick={handleClick}>
+    <Card className={getCardClassName()} onClick={handleClick} data-testid={`custom-node-${id}`}>
       <Handle type="target" position={Position.Left} className="!bg-gray-400 w-2 h-2" />
       <Handle type="source" position={Position.Right} className="!bg-gray-400 w-2 h-2" />
       <Handle type="source" position={Position.Top} className="!bg-gray-400 w-2 h-2" />
       <Handle type="source" position={Position.Bottom} className="!bg-gray-400 w-2 h-2" />
       <CardHeader className="p-2">
         <CardTitle className="text-xs font-bold whitespace-nowrap text-center">{data.title}</CardTitle>
-        <p className="text-[10px] text-muted-foreground text-center">{data.subtext}</p>
+        <p className="text-[10px] text-muted-foreground text-center" data-testid="node-subtext">
+          {data.subtext}
+        </p>
       </CardHeader>
       <CardContent className="p-2 pt-0">
         <div className="flex space-x-1 transition-all duration-200">
