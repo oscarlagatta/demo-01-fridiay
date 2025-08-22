@@ -11,8 +11,6 @@ import { useTransactionSearchContext } from "./transaction-search-provider"
 
 interface TransactionRow {
   id: string
-  aitNumber?: string
-  aitName?: string
   [key: string]: any
 }
 
@@ -95,8 +93,6 @@ export function TransactionDetailsTableAgGrid() {
       const rowData: TransactionRow[] = details.map((detail, index) => {
         const row: TransactionRow = {
           id: `${sourceType}-${index}`,
-          aitNumber: detail.aitNumber,
-          aitName: detail.aitName,
         }
 
         // Add all columns from _raw data
@@ -120,26 +116,7 @@ export function TransactionDetailsTableAgGrid() {
   }, [results, selectedAitId])
 
   const createColumnDefs = useCallback((columns: string[]): ColDef[] => {
-    const columnDefs: ColDef[] = [
-      {
-        headerName: "AIT Number",
-        field: "aitNumber",
-        pinned: "left",
-        width: 150,
-        sortable: true,
-        resizable: true,
-        cellRenderer: (params: ICellRendererParams) => params.value || "—",
-      },
-      {
-        headerName: "AIT Name",
-        field: "aitName",
-        pinned: "left",
-        width: 150,
-        sortable: true,
-        resizable: true,
-        cellRenderer: (params: ICellRendererParams) => params.value || "—",
-      },
-    ]
+    const columnDefs: ColDef[] = []
 
     // Add dynamic columns from transaction data
     columns.forEach((column) => {
