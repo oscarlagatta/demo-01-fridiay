@@ -104,6 +104,40 @@
   }
 }
 
+/* ag-Grid customization */
+.ag-theme-alpine {
+  --ag-background-color: hsl(var(--background));
+  --ag-foreground-color: hsl(var(--foreground));
+  --ag-border-color: hsl(var(--border));
+  --ag-header-background-color: hsl(var(--muted));
+  --ag-header-foreground-color: hsl(var(--foreground));
+  --ag-odd-row-background-color: hsl(var(--muted) / 0.3);
+  --ag-row-hover-color: hsl(var(--muted) / 0.5);
+  --ag-selected-row-background-color: hsl(var(--accent));
+  --ag-range-selection-background-color: hsl(var(--primary) / 0.1);
+  --ag-font-family: inherit;
+  --ag-font-size: 14px;
+  --ag-row-height: 42px;
+  --ag-header-height: 48px;
+}
+
+.ag-theme-alpine .ag-header {
+  font-weight: 500;
+}
+
+.ag-theme-alpine .ag-row-group {
+  font-weight: 600;
+  background-color: hsl(var(--muted) / 0.7);
+}
+
+.ag-theme-alpine .ag-group-expanded .ag-icon {
+  color: hsl(var(--primary));
+}
+
+.ag-theme-alpine .ag-group-contracted .ag-icon {
+  color: hsl(var(--muted-foreground));
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
