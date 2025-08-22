@@ -8,6 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useTransactionSearchContext } from "./transaction-search-provider"
 
+interface TransactionRow {
+  id: string
+  source?: string
+  sourceType?: string
+  [key: string]: any
+}
+
 export function TransactionDetailsTable() {
   const { results, selectedAitId, hideTable, id } = useTransactionSearchContext()
 
@@ -74,9 +81,9 @@ export function TransactionDetailsTable() {
 
     const sortedColumns = Array.from(allColumns).sort()
 
-    const tableData = relevantResults.map((detail, index) => {
+    const tableData: TransactionRow[] = relevantResults.map((detail, index) => {
       const rawData = detail._raw || {}
-      const row: Record<string, any> = {
+      const row: TransactionRow = {
         id: `${rawData.WTX_GFD_ID || index}`,
         source: detail.source,
         sourceType: detail.sourceType,
