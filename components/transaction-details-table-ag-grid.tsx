@@ -128,6 +128,7 @@ export function TransactionDetailsTableAgGrid() {
         width: 150,
         sortable: true,
         resizable: true,
+        cellRenderer: (params: ICellRendererParams) => params.value || "—",
       },
       {
         headerName: "AIT Name",
@@ -136,6 +137,7 @@ export function TransactionDetailsTableAgGrid() {
         width: 150,
         sortable: true,
         resizable: true,
+        cellRenderer: (params: ICellRendererParams) => params.value || "—",
       },
     ]
 
@@ -148,7 +150,10 @@ export function TransactionDetailsTableAgGrid() {
         sortable: true,
         resizable: true,
         filter: true,
-        cellRenderer: (params: ICellRendererParams) => formatCellValue(params.value, column),
+        cellRenderer: (params: ICellRendererParams) => {
+          const formattedValue = formatCellValue(params.value, column)
+          return formattedValue
+        },
       })
     })
 
@@ -184,6 +189,37 @@ export function TransactionDetailsTableAgGrid() {
 
   const collapseAllTables = () => {
     setExpandedTables(new Set())
+  }
+
+  // Early return with helpful message if no data
+  if (!results || !selectedAitId || sourceTypeTables.length === 0) {
+    return (
+      <div className="h-full w-full bg-white">
+        <div className="border-b bg-white px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={hideTable}
+              variant="outline"
+              size="sm"
+              className="flex items-center space-x-2 bg-transparent"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Flow Chart</span>
+            </Button>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Transaction Details</h1>
+              <p className="text-sm text-gray-600">No transaction data available</p>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-gray-500 text-lg">No transaction data found</p>
+            <p className="text-gray-400 text-sm mt-2">Please perform a search to view transaction details</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -264,8 +300,8 @@ export function TransactionDetailsTableAgGrid() {
                         suppressMenuHide={false}
                         getRowStyle={(params) => {
                           return params.node.rowIndex! % 2 === 0
-                            ? { backgroundColor: "hsl(var(--background))" }
-                            : { backgroundColor: "hsl(var(--muted) / 0.3)" }
+                            ? { backgroundColor: "#ffffff" }
+                            : { backgroundColor: "#f8fafc" }
                         }}
                         onGridReady={(params: GridReadyEvent) => {
                           params.api.sizeColumnsToFit()
