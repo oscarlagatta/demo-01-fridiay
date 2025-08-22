@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button"
 import { AgGridReact } from "ag-grid-react"
 import type { ColDef, GridReadyEvent, ICellRendererParams } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
-import "ag-grid-community/styles/ag-theme-alpine.css"
+import "ag-grid-community/styles/ag-theme-quartz.css"
 import { useTransactionSearchContext } from "./transaction-search-provider"
 
 interface TransactionRow {
   id: string
-  source?: string
-  sourceType?: string
+  aitNumber?: string
+  aitName?: string
   [key: string]: any
 }
 
@@ -95,8 +95,8 @@ export function TransactionDetailsTableAgGrid() {
       const rowData: TransactionRow[] = details.map((detail, index) => {
         const row: TransactionRow = {
           id: `${sourceType}-${index}`,
-          source: detail.source,
-          sourceType: detail.sourceType,
+          aitNumber: detail.aitNumber,
+          aitName: detail.aitName,
         }
 
         // Add all columns from _raw data
@@ -122,18 +122,18 @@ export function TransactionDetailsTableAgGrid() {
   const createColumnDefs = useCallback((columns: string[]): ColDef[] => {
     const columnDefs: ColDef[] = [
       {
-        headerName: "Source",
-        field: "source",
+        headerName: "AIT Number",
+        field: "aitNumber",
         pinned: "left",
-        width: 200,
+        width: 150,
         sortable: true,
         resizable: true,
       },
       {
-        headerName: "Source Type",
-        field: "sourceType",
+        headerName: "AIT Name",
+        field: "aitName",
         pinned: "left",
-        width: 200,
+        width: 150,
         sortable: true,
         resizable: true,
       },
@@ -248,7 +248,7 @@ export function TransactionDetailsTableAgGrid() {
                 {/* Individual AG Grid Table */}
                 {isExpanded && (
                   <div className="h-96">
-                    <div className="ag-theme-alpine h-full w-full">
+                    <div className="ag-theme-quartz h-full w-full">
                       <AgGridReact
                         rowData={table.rowData}
                         columnDefs={createColumnDefs(allColumns)}
