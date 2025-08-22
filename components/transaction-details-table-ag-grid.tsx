@@ -1,11 +1,10 @@
 "use client"
 
-import { useMemo, useCallback, useRef } from "react"
-import { ArrowLeft } from "lucide-react"
+import { useMemo, useCallback, useState } from "react"
+import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AgGridReact } from "ag-grid-react"
 import type { ColDef, GridReadyEvent, ICellRendererParams } from "ag-grid-community"
-import { MasterDetailModule } from "ag-grid-enterprise"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-alpine.css"
 import { useTransactionSearchContext } from "./transaction-search-provider"
@@ -14,15 +13,16 @@ interface TransactionRow {
   id: string
   source?: string
   sourceType?: string
-  detailData?: any[]
   [key: string]: any
 }
 
-const DetailCellRenderer = (props: ICellRendererParams) => {
-  const { data } = props
+export function TransactionDetailsTableAgGrid() {
+  const { results, selectedAitId, hideTable, id } = useTransactionSearchContext()
+  const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set())
 
-  if (!data?.detailData || data.detailData.length === 0) {
-    return <div className="p-4 text-gray-500">No detail data available</div>
+  // Helper functions
+  const formatColumnName = (columnName: string) => {
+    return columnName.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
   }
 
   const formatCellValue = (value: any, columnName: string) => {
@@ -54,62 +54,6 @@ const DetailCellRenderer = (props: ICellRendererParams) => {
     return String(value)
   }
 
-  const formatColumnName = (columnName: string) => {
-    return columnName.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-  }
-
-  // Get all unique columns from detail data
-  const allColumns = new Set<string>()
-  data.detailData.forEach((item: any) => {
-    if (item._raw) {
-      Object.keys(item._raw).forEach((key) => allColumns.add(key))
-    }
-  })
-  const sortedColumns = Array.from(allColumns).sort()
-
-  return (
-    <div className="p-4 bg-gray-50 border-t">
-      <h4 className="font-semibold text-gray-900 mb-3">Transaction Details for {data.sourceType}</h4>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-100">
-            <tr>
-              {sortedColumns.slice(0, 8).map((column) => (
-                <th
-                  key={column}
-                  className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  {formatColumnName(column)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {data.detailData.map((item: any, index: number) => (
-              <tr key={index} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                {sortedColumns.slice(0, 8).map((column) => (
-                  <td key={column} className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                    {formatCellValue(item._raw?.[column], column)}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  )
-}
-
-export function TransactionDetailsTableAgGrid() {
-  const { results, selectedAitId, hideTable, id } = useTransactionSearchContext()
-  const gridRef = useRef<AgGridReact>(null)
-
-  // Helper functions
-  const formatColumnName = (columnName: string) => {
-    return columnName.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-  }
-
   const getSystemName = (aitId: string) => {
     if (!results) return `AIT ${aitId}`
 
@@ -117,8 +61,8 @@ export function TransactionDetailsTableAgGrid() {
     return matchingResult?.aitName || `AIT ${aitId}`
   }
 
-  const { rowData, columnDefs } = useMemo(() => {
-    if (!results || !selectedAitId) return { rowData: [], columnDefs: [] }
+  const { sourceTypeTables, allColumns } = useMemo(() => {
+    if (!results || !selectedAitId) return { sourceTypeTables: [], allColumns: [] }
 
     const relevantResults = results.filter((detail) => {
       return detail.aitNumber === selectedAitId
@@ -137,31 +81,46 @@ export function TransactionDetailsTableAgGrid() {
       {} as Record<string, typeof relevantResults>,
     )
 
-    // Create master rows (one per Source Type)
-    const rowData: TransactionRow[] = Object.entries(groupedBySourceType).map(([sourceType, details], index) => {
-      const firstDetail = details[0]
+    // Get all unique columns from all results
+    const allColumnsSet = new Set<string>()
+    relevantResults.forEach((detail) => {
+      if (detail._raw) {
+        Object.keys(detail._raw).forEach((key) => allColumnsSet.add(key))
+      }
+    })
+    const allColumns = Array.from(allColumnsSet).sort()
+
+    // Create separate table data for each Source Type
+    const sourceTypeTables = Object.entries(groupedBySourceType).map(([sourceType, details]) => {
+      const rowData: TransactionRow[] = details.map((detail, index) => {
+        const row: TransactionRow = {
+          id: `${sourceType}-${index}`,
+          source: detail.source,
+          sourceType: detail.sourceType,
+        }
+
+        // Add all columns from _raw data
+        if (detail._raw) {
+          Object.keys(detail._raw).forEach((column) => {
+            row[column] = detail._raw[column] || ""
+          })
+        }
+
+        return row
+      })
+
       return {
-        id: `master-${index}`,
         sourceType,
-        source: firstDetail.source,
         recordCount: details.length,
-        detailData: details, // Store detail data for the detail renderer
+        rowData,
       }
     })
 
+    return { sourceTypeTables, allColumns }
+  }, [results, selectedAitId])
+
+  const createColumnDefs = useCallback((columns: string[]): ColDef[] => {
     const columnDefs: ColDef[] = [
-      {
-        headerName: "Source Type",
-        field: "sourceType",
-        pinned: "left",
-        width: 250,
-        cellRenderer: (params: any) => {
-          const icon = params.node.expanded ? "📂" : "📁"
-          return `${icon} ${params.value} (${params.data.recordCount} records)`
-        },
-        sortable: true,
-        resizable: true,
-      },
       {
         headerName: "Source",
         field: "source",
@@ -171,21 +130,29 @@ export function TransactionDetailsTableAgGrid() {
         resizable: true,
       },
       {
-        headerName: "Record Count",
-        field: "recordCount",
-        width: 150,
+        headerName: "Source Type",
+        field: "sourceType",
+        pinned: "left",
+        width: 200,
         sortable: true,
         resizable: true,
-        cellRenderer: (params: any) => `${params.value} transactions`,
       },
     ]
 
-    return { rowData, columnDefs }
-  }, [results, selectedAitId])
+    // Add dynamic columns from transaction data
+    columns.forEach((column) => {
+      columnDefs.push({
+        headerName: formatColumnName(column),
+        field: column,
+        width: 150,
+        sortable: true,
+        resizable: true,
+        filter: true,
+        cellRenderer: (params: ICellRendererParams) => formatCellValue(params.value, column),
+      })
+    })
 
-  const onGridReady = useCallback((params: GridReadyEvent) => {
-    // Auto-size columns to fit content initially
-    params.api.sizeColumnsToFit()
+    return columnDefs
   }, [])
 
   const defaultColDef = useMemo(
@@ -200,6 +167,24 @@ export function TransactionDetailsTableAgGrid() {
     }),
     [],
   )
+
+  const toggleTable = (sourceType: string) => {
+    const newExpanded = new Set(expandedTables)
+    if (newExpanded.has(sourceType)) {
+      newExpanded.delete(sourceType)
+    } else {
+      newExpanded.add(sourceType)
+    }
+    setExpandedTables(newExpanded)
+  }
+
+  const expandAllTables = () => {
+    setExpandedTables(new Set(sourceTypeTables.map((table) => table.sourceType)))
+  }
+
+  const collapseAllTables = () => {
+    setExpandedTables(new Set())
+  }
 
   return (
     <div className="h-full w-full bg-white">
@@ -217,52 +202,81 @@ export function TransactionDetailsTableAgGrid() {
               <span>Back to Flow Chart</span>
             </Button>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">Transaction Details (Master-Detail)</h1>
+              <h1 className="text-xl font-semibold text-gray-900">Transaction Details by Source Type</h1>
               <p className="text-sm text-gray-600">
-                {getSystemName(selectedAitId || "")} • Transaction ID: {id}
+                {getSystemName(selectedAitId || "")} • Transaction ID: {id} • {sourceTypeTables.length} Source Types
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Button onClick={() => gridRef.current?.api.expandAll()} variant="outline" size="sm" className="text-xs">
+            <Button onClick={expandAllTables} variant="outline" size="sm" className="text-xs bg-transparent">
               Expand All
             </Button>
-            <Button onClick={() => gridRef.current?.api.collapseAll()} variant="outline" size="sm" className="text-xs">
+            <Button onClick={collapseAllTables} variant="outline" size="sm" className="text-xs bg-transparent">
               Collapse All
             </Button>
           </div>
         </div>
       </div>
 
-      {/* ag-Grid Container */}
-      <div className="w-full h-[calc(100vh-200px)] p-6">
-        <div className="ag-theme-alpine h-full w-full border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-          <AgGridReact
-            ref={gridRef}
-            rowData={rowData}
-            columnDefs={columnDefs}
-            defaultColDef={defaultColDef}
-            masterDetail={true}
-            detailCellRenderer={DetailCellRenderer}
-            detailRowHeight={400}
-            detailRowAutoHeight={true}
-            modules={[MasterDetailModule]}
-            pagination={true}
-            paginationPageSize={25}
-            paginationPageSizeSelector={[10, 25, 50, 100]}
-            rowSelection="multiple"
-            suppressRowClickSelection={false}
-            animateRows={true}
-            suppressRowHoverHighlight={false}
-            enableRangeSelection={true}
-            suppressMenuHide={false}
-            getRowStyle={(params) => {
-              return params.node.rowIndex! % 2 === 0
-                ? { backgroundColor: "hsl(var(--background))" }
-                : { backgroundColor: "hsl(var(--muted) / 0.3)" }
-            }}
-            onGridReady={onGridReady}
-          />
+      <div className="w-full h-[calc(100vh-200px)] p-6 overflow-y-auto">
+        <div className="space-y-6">
+          {sourceTypeTables.map((table) => {
+            const isExpanded = expandedTables.has(table.sourceType)
+            return (
+              <div key={table.sourceType} className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                {/* Table Header */}
+                <div
+                  className="bg-gray-50 px-4 py-3 border-b cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => toggleTable(table.sourceType)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      {isExpanded ? (
+                        <ChevronDown className="h-5 w-5 text-gray-500" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-500" />
+                      )}
+                      <h3 className="text-lg font-semibold text-gray-900">{table.sourceType}</h3>
+                      <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                        {table.recordCount} records
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Individual AG Grid Table */}
+                {isExpanded && (
+                  <div className="h-96">
+                    <div className="ag-theme-alpine h-full w-full">
+                      <AgGridReact
+                        rowData={table.rowData}
+                        columnDefs={createColumnDefs(allColumns)}
+                        defaultColDef={defaultColDef}
+                        pagination={true}
+                        paginationPageSize={10}
+                        paginationPageSizeSelector={[5, 10, 25, 50]}
+                        rowSelection="multiple"
+                        suppressRowClickSelection={false}
+                        animateRows={true}
+                        suppressRowHoverHighlight={false}
+                        enableRangeSelection={true}
+                        suppressMenuHide={false}
+                        getRowStyle={(params) => {
+                          return params.node.rowIndex! % 2 === 0
+                            ? { backgroundColor: "hsl(var(--background))" }
+                            : { backgroundColor: "hsl(var(--muted) / 0.3)" }
+                        }}
+                        onGridReady={(params: GridReadyEvent) => {
+                          params.api.sizeColumnsToFit()
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

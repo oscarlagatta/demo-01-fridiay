@@ -44,7 +44,6 @@
     "@tanstack/react-query": "latest",
     "@xyflow/react": "latest",
     "ag-grid-community": "latest",
-    "ag-grid-enterprise": "latest",
     "ag-grid-react": "latest",
     "autoprefixer": "^10.4.20",
     "canvas": "latest",
