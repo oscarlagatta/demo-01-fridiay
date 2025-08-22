@@ -35,8 +35,9 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   // Extract AIT number from the node data subtext (format: "AIT {number}")
   const aitNum = useMemo(() => {
     const match = data.subtext.match(/AIT (\d+)/)
+    console.log("[v0] Node", id, "subtext:", data.subtext, "extracted aitNum:", match ? match[1] : null)
     return match ? match[1] : null
-  }, [data.subtext])
+  }, [data.subtext, id])
 
   // Compute trend colors from Splunk data
   const trendColorMapping = useMemo(() => {
@@ -110,6 +111,17 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   const inLoadingMode = txActive && txFetching
   const inResultsMode = txActive && !txFetching
   const isMatched = !!aitNum && matchedAitIds.has(aitNum)
+
+  console.log("[v0] Node", id, "search state:", {
+    txActive,
+    txFetching,
+    inDefaultMode,
+    inLoadingMode,
+    inResultsMode,
+    aitNum,
+    matchedAitIds: Array.from(matchedAitIds),
+    isMatched,
+  })
 
   return (
     <Card className={getCardClassName()} onClick={handleClick}>
