@@ -18,12 +18,18 @@ export function TransactionDetailsTableAgGrid() {
   const { results, selectedAitId, hideTable, id } = useTransactionSearchContext()
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set())
 
+  console.log("[v0] AG Grid Debug - Results:", results)
+  console.log("[v0] AG Grid Debug - Selected AIT ID:", selectedAitId)
+  console.log("[v0] AG Grid Debug - Transaction ID:", id)
+
   // Helper functions
   const formatColumnName = (columnName: string) => {
     return columnName.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
   }
 
   const formatCellValue = (value: any, columnName: string) => {
+    console.log("[v0] Formatting cell value:", { columnName, value, type: typeof value })
+
     if (value === null || value === undefined || value === "" || value === "null") {
       return "—"
     }
@@ -62,9 +68,14 @@ export function TransactionDetailsTableAgGrid() {
   const { sourceTypeTables, allColumns } = useMemo(() => {
     if (!results || !selectedAitId) return { sourceTypeTables: [], allColumns: [] }
 
+    console.log("[v0] Processing results for AIT ID:", selectedAitId)
+    console.log("[v0] All results:", results)
+
     const relevantResults = results.filter((detail) => {
       return detail.aitNumber === selectedAitId
     })
+
+    console.log("[v0] Relevant results after filtering:", relevantResults)
 
     // Group results by sourceType
     const groupedBySourceType = relevantResults.reduce(
@@ -79,14 +90,19 @@ export function TransactionDetailsTableAgGrid() {
       {} as Record<string, typeof relevantResults>,
     )
 
+    console.log("[v0] Grouped by source type:", groupedBySourceType)
+
     // Get all unique columns from all results
     const allColumnsSet = new Set<string>()
     relevantResults.forEach((detail) => {
       if (detail._raw) {
-        Object.keys(detail._raw).forEach((key) => allColumnsSet.add(key))
+        const rawData = detail._raw as Record<string, any>
+        Object.keys(rawData).forEach((key) => allColumnsSet.add(key))
       }
     })
     const allColumns = Array.from(allColumnsSet).sort()
+
+    console.log("[v0] All columns found:", allColumns)
 
     // Create separate table data for each Source Type
     const sourceTypeTables = Object.entries(groupedBySourceType).map(([sourceType, details]) => {
@@ -95,15 +111,19 @@ export function TransactionDetailsTableAgGrid() {
           id: `${sourceType}-${index}`,
         }
 
-        // Add all columns from _raw data
         if (detail._raw) {
-          Object.keys(detail._raw).forEach((column) => {
-            row[column] = detail._raw[column] || ""
+          const rawData = detail._raw as Record<string, any>
+          Object.keys(rawData).forEach((column) => {
+            const value = rawData[column]
+            row[column] = value !== null && value !== undefined ? value : ""
+            console.log("[v0] Setting row data:", { column, value, finalValue: row[column] })
           })
         }
 
         return row
       })
+
+      console.log("[v0] Row data for", sourceType, ":", rowData)
 
       return {
         sourceType,
@@ -112,28 +132,32 @@ export function TransactionDetailsTableAgGrid() {
       }
     })
 
+    console.log("[v0] Final source type tables:", sourceTypeTables)
+
     return { sourceTypeTables, allColumns }
   }, [results, selectedAitId])
 
   const createColumnDefs = useCallback((columns: string[]): ColDef[] => {
     const columnDefs: ColDef[] = []
 
-    // Add dynamic columns from transaction data
     columns.forEach((column) => {
       columnDefs.push({
         headerName: formatColumnName(column),
         field: column,
-        width: 150,
         sortable: true,
         resizable: true,
-        filter: true,
+        autoHeaderHeight: true,
+        minWidth: 120,
+        maxWidth: 300,
         cellRenderer: (params: ICellRendererParams) => {
+          console.log("[v0] Cell renderer params:", { field: params.colDef?.field, value: params.value })
           const formattedValue = formatCellValue(params.value, column)
-          return formattedValue
+          return `<span title="${formattedValue}">${formattedValue}</span>`
         },
       })
     })
 
+    console.log("[v0] Created column definitions:", columnDefs)
     return columnDefs
   }, [])
 
@@ -141,11 +165,24 @@ export function TransactionDetailsTableAgGrid() {
     () => ({
       resizable: true,
       sortable: true,
-      filter: true,
-      floatingFilter: true,
-      minWidth: 100,
-      suppressMenu: false,
-      menuTabs: ["filterMenuTab", "generalMenuTab"],
+      minWidth: 120,
+      maxWidth: 300,
+      autoHeaderHeight: true,
+      wrapHeaderText: true,
+      suppressSizeToFit: false,
+    }),
+    [],
+  )
+
+  const gridOptions = useMemo(
+    () => ({
+      suppressHorizontalScroll: false,
+      alwaysShowHorizontalScroll: true,
+      suppressColumnVirtualisation: false,
+      enableRangeSelection: true,
+      rowSelection: "multiple" as const,
+      animateRows: true,
+      suppressRowHoverHighlight: false,
     }),
     [],
   )
@@ -260,28 +297,34 @@ export function TransactionDetailsTableAgGrid() {
 
                 {/* Individual AG Grid Table */}
                 {isExpanded && (
-                  <div className="h-96">
+                  <div className="h-96 w-full">
                     <div className="ag-theme-quartz h-full w-full">
                       <AgGridReact
                         rowData={table.rowData}
                         columnDefs={createColumnDefs(allColumns)}
                         defaultColDef={defaultColDef}
+                        gridOptions={gridOptions}
                         pagination={true}
                         paginationPageSize={10}
                         paginationPageSizeSelector={[5, 10, 25, 50]}
-                        rowSelection="multiple"
-                        suppressRowClickSelection={false}
                         animateRows={true}
                         suppressRowHoverHighlight={false}
-                        enableRangeSelection={true}
-                        suppressMenuHide={false}
+                        suppressHorizontalScroll={false}
+                        alwaysShowHorizontalScroll={true}
+                        suppressColumnVirtualisation={false}
+                        skipHeaderOnAutoSize={false}
                         getRowStyle={(params) => {
                           return params.node.rowIndex! % 2 === 0
                             ? { backgroundColor: "#ffffff" }
                             : { backgroundColor: "#f8fafc" }
                         }}
                         onGridReady={(params: GridReadyEvent) => {
-                          params.api.sizeColumnsToFit()
+                          console.log("[v0] Grid ready, auto-sizing columns")
+                          params.api.autoSizeAllColumns()
+                          // Ensure horizontal scrollbar is visible if needed
+                          setTimeout(() => {
+                            params.api.sizeColumnsToFit()
+                          }, 100)
                         }}
                       />
                     </div>
