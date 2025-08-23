@@ -148,11 +148,11 @@ export function TransactionDetailsTableAgGrid() {
         resizable: true,
         autoHeaderHeight: true,
         flex: 1,
-        minWidth: 100,
+        minWidth: 150,
+        maxWidth: 400,
         cellRenderer: (params: ICellRendererParams) => {
           console.log("[v0] Cell renderer params:", { field: params.colDef?.field, value: params.value })
-          const formattedValue = formatCellValue(params.value, column)
-          return `<span title="${formattedValue}">${formattedValue}</span>`
+          return formatCellValue(params.value, column)
         },
       })
     })
@@ -166,7 +166,8 @@ export function TransactionDetailsTableAgGrid() {
       resizable: true,
       sortable: true,
       flex: 1,
-      minWidth: 100,
+      minWidth: 150,
+      maxWidth: 400,
       autoHeaderHeight: true,
       wrapHeaderText: true,
       suppressSizeToFit: false,
@@ -218,7 +219,7 @@ export function TransactionDetailsTableAgGrid() {
               className="flex items-center space-x-2 bg-transparent"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>Back to Flow Chart</span>
+              <span>Back</span>
             </Button>
             <div>
               <h1 className="text-xl font-semibold text-gray-900">Transaction Details</h1>
@@ -249,10 +250,9 @@ export function TransactionDetailsTableAgGrid() {
               className="flex items-center space-x-2 bg-transparent"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span>Back to Flow Chart</span>
+              <span>Back</span>
             </Button>
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">Transaction Details by Source Type</h1>
               <p className="text-sm text-gray-600">
                 {getSystemName(selectedAitId || "")} • Transaction ID: {id} • {sourceTypeTables.length} Source Types
               </p>
@@ -269,69 +269,67 @@ export function TransactionDetailsTableAgGrid() {
         </div>
       </div>
 
-      <div className="w-full px-6 py-6">
-        <div className="space-y-6">
-          {sourceTypeTables.map((table) => {
-            const isExpanded = expandedTables.has(table.sourceType)
-            return (
-              <div key={table.sourceType} className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                {/* Table Header */}
-                <div
-                  className="bg-gray-50 px-4 py-3 border-b cursor-pointer hover:bg-gray-100 transition-colors"
-                  onClick={() => toggleTable(table.sourceType)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      {isExpanded ? (
-                        <ChevronDown className="h-5 w-5 text-gray-500" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-gray-500" />
-                      )}
-                      <h3 className="text-lg font-semibold text-gray-900">{table.sourceType}</h3>
-                      <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
-                        {table.recordCount} records
-                      </span>
-                    </div>
+      <div className="space-y-6">
+        {sourceTypeTables.map((table) => {
+          const isExpanded = expandedTables.has(table.sourceType)
+          return (
+            <div key={table.sourceType} className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              {/* Table Header */}
+              <div
+                className="bg-gray-50 px-4 py-3 border-b cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => toggleTable(table.sourceType)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {isExpanded ? (
+                      <ChevronDown className="h-5 w-5 text-gray-500" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-gray-500" />
+                    )}
+                    <h3 className="text-lg font-semibold text-gray-900">{table.sourceType}</h3>
+                    <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                      {table.recordCount} records
+                    </span>
                   </div>
                 </div>
-
-                {/* Individual AG Grid Table */}
-                {isExpanded && (
-                  <div className="h-[500px] w-full">
-                    <div className="ag-theme-quartz h-full w-full">
-                      <AgGridReact
-                        rowData={table.rowData}
-                        columnDefs={createColumnDefs(allColumns)}
-                        defaultColDef={defaultColDef}
-                        gridOptions={gridOptions}
-                        pagination={true}
-                        paginationPageSize={10}
-                        paginationPageSizeSelector={[5, 10, 25, 50]}
-                        animateRows={true}
-                        suppressRowHoverHighlight={false}
-                        suppressHorizontalScroll={false}
-                        alwaysShowHorizontalScroll={true}
-                        suppressColumnVirtualisation={false}
-                        skipHeaderOnAutoSize={false}
-                        getRowStyle={(params) => {
-                          return params.node.rowIndex! % 2 === 0
-                            ? { backgroundColor: "#ffffff" }
-                            : { backgroundColor: "#f8fafc" }
-                        }}
-                        onGridReady={(params: GridReadyEvent) => {
-                          console.log("[v0] Grid ready, sizing columns to fit")
-                          setTimeout(() => {
-                            params.api.sizeColumnsToFit()
-                          }, 100)
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
-            )
-          })}
-        </div>
+
+              {/* Individual AG Grid Table */}
+              {isExpanded && (
+                <div className="w-full" style={{ height: `${Math.min(table.recordCount * 35 + 200, 600)}px` }}>
+                  <div className="ag-theme-quartz h-full w-full">
+                    <AgGridReact
+                      rowData={table.rowData}
+                      columnDefs={createColumnDefs(allColumns)}
+                      defaultColDef={defaultColDef}
+                      gridOptions={gridOptions}
+                      pagination={true}
+                      paginationPageSize={10}
+                      paginationPageSizeSelector={[5, 10, 25, 50]}
+                      animateRows={true}
+                      suppressRowHoverHighlight={false}
+                      suppressHorizontalScroll={false}
+                      alwaysShowHorizontalScroll={true}
+                      suppressColumnVirtualisation={false}
+                      skipHeaderOnAutoSize={false}
+                      getRowStyle={(params) => {
+                        return params.node.rowIndex! % 2 === 0
+                          ? { backgroundColor: "#ffffff" }
+                          : { backgroundColor: "#f8fafc" }
+                      }}
+                      onGridReady={(params: GridReadyEvent) => {
+                        console.log("[v0] Grid ready, sizing columns to fit")
+                        setTimeout(() => {
+                          params.api.sizeColumnsToFit()
+                        }, 100)
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
