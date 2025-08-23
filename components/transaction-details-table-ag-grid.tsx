@@ -147,8 +147,8 @@ export function TransactionDetailsTableAgGrid() {
         sortable: true,
         resizable: true,
         autoHeaderHeight: true,
-        minWidth: 120,
-        maxWidth: 300,
+        flex: 1,
+        minWidth: 100,
         cellRenderer: (params: ICellRendererParams) => {
           console.log("[v0] Cell renderer params:", { field: params.colDef?.field, value: params.value })
           const formattedValue = formatCellValue(params.value, column)
@@ -165,8 +165,8 @@ export function TransactionDetailsTableAgGrid() {
     () => ({
       resizable: true,
       sortable: true,
-      minWidth: 120,
-      maxWidth: 300,
+      flex: 1,
+      minWidth: 100,
       autoHeaderHeight: true,
       wrapHeaderText: true,
       suppressSizeToFit: false,
@@ -269,7 +269,7 @@ export function TransactionDetailsTableAgGrid() {
         </div>
       </div>
 
-      <div className="w-full h-[calc(100vh-200px)] p-6 overflow-y-auto">
+      <div className="w-full px-6 py-6">
         <div className="space-y-6">
           {sourceTypeTables.map((table) => {
             const isExpanded = expandedTables.has(table.sourceType)
@@ -297,7 +297,7 @@ export function TransactionDetailsTableAgGrid() {
 
                 {/* Individual AG Grid Table */}
                 {isExpanded && (
-                  <div className="h-96 w-full">
+                  <div className="h-[500px] w-full">
                     <div className="ag-theme-quartz h-full w-full">
                       <AgGridReact
                         rowData={table.rowData}
@@ -319,9 +319,7 @@ export function TransactionDetailsTableAgGrid() {
                             : { backgroundColor: "#f8fafc" }
                         }}
                         onGridReady={(params: GridReadyEvent) => {
-                          console.log("[v0] Grid ready, auto-sizing columns")
-                          params.api.autoSizeAllColumns()
-                          // Ensure horizontal scrollbar is visible if needed
+                          console.log("[v0] Grid ready, sizing columns to fit")
                           setTimeout(() => {
                             params.api.sizeColumnsToFit()
                           }, 100)
