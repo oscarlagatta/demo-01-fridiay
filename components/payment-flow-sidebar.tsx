@@ -16,6 +16,9 @@ import {
   Users,
   FileText,
   Settings,
+  ChevronDown,
+  ChevronRight,
+  MapPin,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -37,6 +40,13 @@ const paymentFlowItems = [
   { id: "card-payments", title: "Card Payments", subtitle: "Card processing flow", Icon: CreditCard },
 ]
 
+const apacCountries = [
+  { id: "china", title: "China", subtitle: "China Payment Flow", Icon: MapPin },
+  { id: "taiwan", title: "Taiwan", subtitle: "Taiwan Payment Flow", Icon: MapPin },
+  { id: "malaysia", title: "Malaysia", subtitle: "Malaysia Payment Flow", Icon: MapPin },
+  { id: "korea", title: "Korea", subtitle: "Korea Payment Flow", Icon: MapPin },
+]
+
 type SecondaryBarProps = {
   selectedSubItem: string
   onSubItemSelected: (id: string) => void
@@ -52,6 +62,8 @@ function SecondarySideBar({
   isCollapsed,
   onToggleCollapse,
 }: SecondaryBarProps) {
+  const [isApacExpanded, setIsApacExpanded] = useState(false)
+
   if (!isVisible) {
     return null
   }
@@ -132,6 +144,59 @@ function SecondarySideBar({
                 )}
               </button>
             ))}
+
+            {!isCollapsed && (
+              <div>
+                <button
+                  onClick={() => setIsApacExpanded(!isApacExpanded)}
+                  className="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors text-foreground hover:bg-accent"
+                >
+                  <Globe className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-sm">APAC</div>
+                    <div className="text-xs opacity-75 mt-0.5">Asia Pacific Payment Flows</div>
+                  </div>
+                  {isApacExpanded ? (
+                    <ChevronDown className="h-4 w-4 flex-shrink-0 mt-1" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 flex-shrink-0 mt-1" />
+                  )}
+                </button>
+
+                {isApacExpanded && (
+                  <div className="ml-8 mt-1 space-y-1">
+                    {apacCountries.map((country) => (
+                      <button
+                        key={country.id}
+                        onClick={() => onSubItemSelected(country.id)}
+                        className={cn(
+                          "flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left transition-colors",
+                          selectedSubItem === country.id
+                            ? "bg-slate-800 text-white shadow-md"
+                            : "text-foreground hover:bg-accent",
+                        )}
+                      >
+                        <country.Icon className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm">{country.title}</div>
+                          <div className="text-xs opacity-75 mt-0.5">{country.subtitle}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isCollapsed && (
+              <button
+                onClick={() => setIsApacExpanded(!isApacExpanded)}
+                className="flex w-full items-center justify-center rounded-lg px-3 py-2 text-foreground hover:bg-accent"
+                title="APAC"
+              >
+                <Globe className="h-5 w-5" />
+              </button>
+            )}
           </nav>
         </div>
       </div>
@@ -209,6 +274,34 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
           <div className="p-6">
             <h1 className="text-2xl font-bold mb-4">Card Payments</h1>
             <p className="text-muted-foreground">Card payment monitoring content coming soon.</p>
+          </div>
+        )
+      case "china":
+        return (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">China Payment Flow</h1>
+            <p className="text-muted-foreground">China payment flow monitoring content coming soon.</p>
+          </div>
+        )
+      case "taiwan":
+        return (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Taiwan Payment Flow</h1>
+            <p className="text-muted-foreground">Taiwan payment flow monitoring content coming soon.</p>
+          </div>
+        )
+      case "malaysia":
+        return (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Malaysia Payment Flow</h1>
+            <p className="text-muted-foreground">Malaysia payment flow monitoring content coming soon.</p>
+          </div>
+        )
+      case "korea":
+        return (
+          <div className="p-6">
+            <h1 className="text-2xl font-bold mb-4">Korea Payment Flow</h1>
+            <p className="text-muted-foreground">Korea payment flow monitoring content coming soon.</p>
           </div>
         )
       default:
