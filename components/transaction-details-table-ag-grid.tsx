@@ -18,7 +18,14 @@ export function TransactionDetailsTableAgGrid() {
   const { results, selectedAitId, hideTable, id } = useTransactionSearchContext()
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set())
 
-  console.log("[v0] AG Grid Debug - Results:", results)
+  // Only log essential debugging information
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      "[v0] AG Grid Debug - Record counts:",
+      results?.map((r) => ({ sourceType: r.sourceType, aitNumber: r.aitNumber })),
+    )
+  }
+
   console.log("[v0] AG Grid Debug - Selected AIT ID:", selectedAitId)
   console.log("[v0] AG Grid Debug - Transaction ID:", id)
 
@@ -28,8 +35,6 @@ export function TransactionDetailsTableAgGrid() {
   }
 
   const formatCellValue = (value: any, columnName: string) => {
-    console.log("[v0] Formatting cell value:", { columnName, value, type: typeof value })
-
     if (value === null || value === undefined || value === "" || value === "null") {
       return "—"
     }
@@ -68,14 +73,13 @@ export function TransactionDetailsTableAgGrid() {
   const { sourceTypeTables, allColumns } = useMemo(() => {
     if (!results || !selectedAitId) return { sourceTypeTables: [], allColumns: [] }
 
-    console.log("[v0] Processing results for AIT ID:", selectedAitId)
-    console.log("[v0] All results:", results)
+    if (process.env.NODE_ENV === "development") {
+      console.log("[v0] Processing results for AIT ID:", selectedAitId, "Total results:", results.length)
+    }
 
     const relevantResults = results.filter((detail) => {
       return detail.aitNumber === selectedAitId
     })
-
-    console.log("[v0] Relevant results after filtering:", relevantResults)
 
     // Group results by sourceType
     const groupedBySourceType = relevantResults.reduce(
@@ -90,8 +94,6 @@ export function TransactionDetailsTableAgGrid() {
       {} as Record<string, typeof relevantResults>,
     )
 
-    console.log("[v0] Grouped by source type:", groupedBySourceType)
-
     // Get all unique columns from all results
     const allColumnsSet = new Set<string>()
     relevantResults.forEach((detail) => {
@@ -101,8 +103,6 @@ export function TransactionDetailsTableAgGrid() {
       }
     })
     const allColumns = Array.from(allColumnsSet).sort()
-
-    console.log("[v0] All columns found:", allColumns)
 
     // Create separate table data for each Source Type
     const sourceTypeTables = Object.entries(groupedBySourceType).map(([sourceType, details]) => {
@@ -116,14 +116,11 @@ export function TransactionDetailsTableAgGrid() {
           Object.keys(rawData).forEach((column) => {
             const value = rawData[column]
             row[column] = value !== null && value !== undefined ? value : ""
-            console.log("[v0] Setting row data:", { column, value, finalValue: row[column] })
           })
         }
 
         return row
       })
-
-      console.log("[v0] Row data for", sourceType, ":", rowData)
 
       return {
         sourceType,
@@ -132,7 +129,12 @@ export function TransactionDetailsTableAgGrid() {
       }
     })
 
-    console.log("[v0] Final source type tables:", sourceTypeTables)
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        "[v0] Created tables:",
+        sourceTypeTables.map((t) => ({ sourceType: t.sourceType, recordCount: t.recordCount })),
+      )
+    }
 
     return { sourceTypeTables, allColumns }
   }, [results, selectedAitId])
@@ -147,17 +149,15 @@ export function TransactionDetailsTableAgGrid() {
         sortable: true,
         resizable: true,
         autoHeaderHeight: true,
-        flex: 1,
-        minWidth: 150,
-        maxWidth: 400,
+        width: 180,
+        minWidth: 120,
+        maxWidth: 350,
         cellRenderer: (params: ICellRendererParams) => {
-          console.log("[v0] Cell renderer params:", { field: params.colDef?.field, value: params.value })
           return formatCellValue(params.value, column)
         },
       })
     })
 
-    console.log("[v0] Created column definitions:", columnDefs)
     return columnDefs
   }, [])
 
@@ -165,9 +165,9 @@ export function TransactionDetailsTableAgGrid() {
     () => ({
       resizable: true,
       sortable: true,
-      flex: 1,
-      minWidth: 150,
-      maxWidth: 400,
+      width: 180,
+      minWidth: 120,
+      maxWidth: 350,
       autoHeaderHeight: true,
       wrapHeaderText: true,
       suppressSizeToFit: false,
@@ -182,8 +182,9 @@ export function TransactionDetailsTableAgGrid() {
       suppressColumnVirtualisation: false,
       enableRangeSelection: true,
       rowSelection: "multiple" as const,
-      animateRows: true,
+      animateRows: false,
       suppressRowHoverHighlight: false,
+      rowBuffer: 10,
     }),
     [],
   )
@@ -209,7 +210,7 @@ export function TransactionDetailsTableAgGrid() {
   // Early return with helpful message if no data
   if (!results || !selectedAitId || sourceTypeTables.length === 0) {
     return (
-      <div className="h-full w-full bg-white">
+      <div className="w-full">
         <div className="border-b bg-white px-6 py-4">
           <div className="flex items-center space-x-4">
             <Button
@@ -238,7 +239,7 @@ export function TransactionDetailsTableAgGrid() {
   }
 
   return (
-    <div className="h-full w-full bg-white">
+    <div className="w-full">
       {/* Header */}
       <div className="border-b bg-white px-6 py-4">
         <div className="flex items-center justify-between">
@@ -296,17 +297,17 @@ export function TransactionDetailsTableAgGrid() {
 
               {/* Individual AG Grid Table */}
               {isExpanded && (
-                <div className="w-full" style={{ height: `${Math.min(table.recordCount * 35 + 200, 600)}px` }}>
-                  <div className="ag-theme-quartz h-full w-full">
+                <div className="w-full">
+                  <div className="ag-theme-quartz" style={{ height: "500px", width: "100%" }}>
                     <AgGridReact
                       rowData={table.rowData}
                       columnDefs={createColumnDefs(allColumns)}
                       defaultColDef={defaultColDef}
                       gridOptions={gridOptions}
                       pagination={true}
-                      paginationPageSize={10}
-                      paginationPageSizeSelector={[5, 10, 25, 50]}
-                      animateRows={true}
+                      paginationPageSize={25}
+                      paginationPageSizeSelector={[10, 25, 50, 100]}
+                      animateRows={false}
                       suppressRowHoverHighlight={false}
                       suppressHorizontalScroll={false}
                       alwaysShowHorizontalScroll={true}
@@ -318,10 +319,16 @@ export function TransactionDetailsTableAgGrid() {
                           : { backgroundColor: "#f8fafc" }
                       }}
                       onGridReady={(params: GridReadyEvent) => {
-                        console.log("[v0] Grid ready, sizing columns to fit")
-                        setTimeout(() => {
-                          params.api.sizeColumnsToFit()
-                        }, 100)
+                        try {
+                          // Use longer timeout for large datasets and only size columns to fit
+                          setTimeout(() => {
+                            if (params.api) {
+                              params.api.sizeColumnsToFit()
+                            }
+                          }, 200)
+                        } catch (error) {
+                          console.error("[v0] Error in grid ready:", error)
+                        }
                       }}
                     />
                   </div>
