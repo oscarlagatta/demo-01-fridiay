@@ -120,6 +120,17 @@ const mockTransactionData = [
   },
 ]
 
+function filterByAmount(data: typeof mockTransactionData, transactionAmount: string) {
+  const targetAmount = transactionAmount.replace(/[,$]/g, "").trim()
+
+  return data.filter((transaction) => {
+    const billingAmount = transaction._raw.TBT_BILLING_AMT
+    const tranAmount = transaction._raw.TPP_TRAN_AMT
+
+    return billingAmount === targetAmount || tranAmount === targetAmount
+  })
+}
+
 function filterByDateRange(data: typeof mockTransactionData, dateStart?: string, dateEnd?: string) {
   if (!dateStart && !dateEnd) return data
 
@@ -135,39 +146,28 @@ function filterByDateRange(data: typeof mockTransactionData, dateStart?: string,
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const transactionId = searchParams.get("transactionId")
+  const transactionAmount = searchParams.get("transactionAmount")
   const dateStart = searchParams.get("dateStart")
   const dateEnd = searchParams.get("dateEnd")
 
-  console.log("[v0] Mock API called with params:", { transactionId, dateStart, dateEnd })
+  console.log("[v0] Amount-based API called with params:", { transactionAmount, dateStart, dateEnd })
 
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
-  if (transactionId) {
-    if (transactionId === "T0P7R96NFJWBBSTZ") {
-      console.log("[v0] Returning mock transaction data for specific ID")
-      return NextResponse.json([mockTransactionData[0]]) // Return first transaction for this ID
-    }
-    if (transactionId === "A1B2C3D4E5F6G7H8") {
-      console.log("[v0] Returning mock transaction data for second ID")
-      return NextResponse.json([mockTransactionData[1]]) // Return second transaction for this ID
-    }
-    if (transactionId === "X9Y8Z7W6V5U4T3S2") {
-      console.log("[v0] Returning mock transaction data for third ID")
-      return NextResponse.json([mockTransactionData[2]]) // Return third transaction for this ID
-    }
-
-    console.log("[v0] Transaction ID not found, returning empty array")
+  if (!transactionAmount) {
+    console.log("[v0] No transaction amount provided, returning empty array")
     return NextResponse.json([])
   }
 
+  // Filter by amount first
+  let filteredData = filterByAmount(mockTransactionData, transactionAmount)
+
+  // Then filter by date range if provided
   if (dateStart || dateEnd) {
-    const filteredData = filterByDateRange(mockTransactionData, dateStart || undefined, dateEnd || undefined)
-    console.log("[v0] Returning filtered data by date range:", filteredData.length, "transactions")
-    return NextResponse.json(filteredData)
+    filteredData = filterByDateRange(filteredData, dateStart || undefined, dateEnd || undefined)
   }
 
-  console.log("[v0] No search parameters provided, returning empty array")
-  return NextResponse.json([])
+  console.log("[v0] Returning filtered data by amount and date range:", filteredData.length, "transactions")
+  return NextResponse.json(filteredData)
 }

@@ -6,6 +6,8 @@ export interface SplunkTransactionDetail {
   source: string
   sourceType: string
   _raw: Raw
+  aitName?: string // AIT name for transaction identification
+  aitNumber?: string // AIT number for transaction tracking
 }
 
 export interface Raw {
@@ -50,6 +52,8 @@ export interface TransactionSummary {
   source: string
   counterpartyCountry: string
   score?: number
+  aitName?: string
+  aitNumber?: string
   metadata: Record<string, string | number | boolean>
 }
 
@@ -58,4 +62,12 @@ export interface TransactionApiResponse {
   id: string
   results: SplunkTransactionDetails
   summary: TransactionSummary
+}
+
+// Search parameters interface
+export interface SearchParams {
+  transactionId?: string
+  transactionAmount?: string
+  dateStart?: string
+  dateEnd?: string
 }

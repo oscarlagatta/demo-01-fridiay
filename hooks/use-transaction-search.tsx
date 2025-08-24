@@ -30,6 +30,12 @@ class ApiError extends Error {
   }
 }
 
+interface SearchParams {
+  transactionId?: string
+  dateStart?: string
+  dateEnd?: string
+}
+
 function mapStatus(code?: string): TransactionSummary["status"] {
   switch ((code || "").toUpperCase()) {
     case "A":
@@ -63,7 +69,7 @@ function toIsoDate(raw: Raw): string {
   return !Number.isNaN(Date.parse(fallback)) ? new Date(fallback).toISOString() : new Date().toISOString()
 }
 
-function buildSummary(id: string, results: SplunkTransactionDetails): TransactionSummary {
+function buildSummary(searchKey: string, results: SplunkTransactionDetails): TransactionSummary {
   const first = results[0]?._raw as Raw | undefined
   const action = first?.RRR_ACTION_CODE
   const status = mapStatus(action)
@@ -72,7 +78,7 @@ function buildSummary(id: string, results: SplunkTransactionDetails): Transactio
   const amount = toNumber(first?.TBT_BILLING_AMT || first?.TPP_TRAN_AMT)
 
   const date = first ? toIsoDate(first) : new Date().toISOString()
-  const reference = first?.TBT_REF_NUM || id
+  const reference = first?.TBT_REF_NUM || searchKey
   const source = first?.SMH_SOURCE || "Unknown"
   const counterpartyCountry = first?.TPP_CNTRY_CODE || first?.TPP_BANK_CNTRY_CODE || first?.XQQ_CUST_CNTRY_CODE || "US"
   const score = first?.RRR_SCORE ? Number.parseInt(first.RRR_SCORE, 10) : undefined
@@ -89,7 +95,7 @@ function buildSummary(id: string, results: SplunkTransactionDetails): Transactio
   }
 
   return {
-    id,
+    id: searchKey,
     status,
     amount,
     currency,
@@ -103,7 +109,7 @@ function buildSummary(id: string, results: SplunkTransactionDetails): Transactio
 }
 
 function transformApiResponse(
-  id: string,
+  searchKey: string,
   apiResponse: GetApiV2SplunkDataGetTransactionDetailsDataResponse,
 ): TransactionApiResponse {
   console.log("[v0] Raw API response:", apiResponse)
@@ -116,9 +122,9 @@ function transformApiResponse(
   if (!responseArray.length || !responseArray[0]) {
     console.log("[v0] No response data available")
     return {
-      id,
+      id: searchKey,
       results: [],
-      summary: buildSummary(id, []),
+      summary: buildSummary(searchKey, []),
     }
   }
 
@@ -135,24 +141,32 @@ function transformApiResponse(
 
   console.log("[v0] Transformed results (all records):", results)
 
-  const summary = buildSummary(id, results)
+  const summary = buildSummary(searchKey, results)
 
   return {
-    id,
+    id: searchKey,
     results,
     summary,
   }
 }
 
-export function useTransactionSearch(defaultId = "") {
-  const [queryId, setQueryId] = useState<string>(defaultId.toUpperCase())
+export function useTransactionSearch(defaultParams: SearchParams = {}) {
+  const [searchParams, setSearchParams] = useState<SearchParams>(defaultParams)
 
-  const enabled = useMemo(() => ID_REGEX.test(queryId), [queryId])
+  const enabled = useMemo(() => {
+    const hasValidId = searchParams.transactionId && ID_REGEX.test(searchParams.transactionId)
+    const hasDateRange = searchParams.dateStart || searchParams.dateEnd
+    return !!(hasValidId || hasDateRange)
+  }, [searchParams])
 
-  const heyApiQuery = useGetSplunkUsWiresTransactionDetails(queryId)
+  const heyApiQuery = useGetSplunkUsWiresTransactionDetails(
+    searchParams.transactionId || "",
+    searchParams.dateStart,
+    searchParams.dateEnd,
+  )
 
   console.log("[v0] Search hook state:", {
-    queryId,
+    searchParams,
     enabled,
     hasData: !!heyApiQuery.data,
     isLoading: heyApiQuery.isLoading,
@@ -162,12 +176,20 @@ export function useTransactionSearch(defaultId = "") {
     rawApiResponse: heyApiQuery.data,
   })
 
+  const searchKey = useMemo(() => {
+    if (searchParams.transactionId) return searchParams.transactionId
+    if (searchParams.dateStart || searchParams.dateEnd) {
+      return `${searchParams.dateStart || "any"}_to_${searchParams.dateEnd || "any"}`
+    }
+    return ""
+  }, [searchParams])
+
   const transformedData = useMemo(() => {
     if (!heyApiQuery.data) return undefined
-    const transformed = transformApiResponse(queryId, heyApiQuery.data)
+    const transformed = transformApiResponse(searchKey, heyApiQuery.data)
     console.log("[v0] Transformed data:", transformed)
     return transformed
-  }, [heyApiQuery.data, queryId])
+  }, [heyApiQuery.data, searchKey])
 
   const query = {
     data: transformedData,
@@ -178,22 +200,39 @@ export function useTransactionSearch(defaultId = "") {
     refetch: heyApiQuery.refetch,
   }
 
-  const invalidId = useMemo(() => !ID_REGEX.test(queryId) || query.error?.status === 400, [queryId, query.error])
+  const invalidId = useMemo(() => {
+    if (searchParams.transactionId && !ID_REGEX.test(searchParams.transactionId)) return true
+    return query.error?.status === 400
+  }, [searchParams.transactionId, query.error])
+
   const notFound = useMemo(() => query.error?.status === 404, [query.error])
 
-  function search(nextId: string) {
-    setQueryId(nextId.toUpperCase())
+  function searchById(transactionId: string) {
+    setSearchParams({ transactionId: transactionId.toUpperCase() })
+  }
+
+  function searchByDateRange(dateStart?: string, dateEnd?: string) {
+    setSearchParams({ dateStart, dateEnd })
+  }
+
+  function searchByAll(params: SearchParams) {
+    setSearchParams({
+      transactionId: params.transactionId?.toUpperCase(),
+      dateStart: params.dateStart,
+      dateEnd: params.dateEnd,
+    })
   }
 
   function reset() {
-    setQueryId(defaultId.toUpperCase())
+    setSearchParams({})
   }
 
   const results: SplunkTransactionDetails | undefined = query.data?.results
   const summary: TransactionSummary | undefined = query.data?.summary
 
   return {
-    id: queryId,
+    id: searchKey,
+    searchParams,
     results,
     summary,
     isLoading: query.isLoading,
@@ -203,7 +242,11 @@ export function useTransactionSearch(defaultId = "") {
     invalidId,
     notFound,
     refetch: query.refetch,
-    search,
+    searchById,
+    searchByDateRange,
+    searchByAll,
     reset,
+    // Legacy compatibility
+    search: searchById,
   }
 }

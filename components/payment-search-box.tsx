@@ -27,7 +27,7 @@ function PaymentSearchBox() {
   })
 
   const queryClient = useQueryClient()
-  const { search: searchTx, clear: clearTx, isFetching: txFetching } = useTransactionSearchContext()
+  const { searchByAll, clear: clearTx, isFetching: txFetching } = useTransactionSearchContext()
 
   const handleInputChange = (field: keyof SearchCriteria, value: string) => {
     setSearchCriteria((prev) => ({
@@ -41,19 +41,22 @@ function PaymentSearchBox() {
     [searchCriteria.transactionId],
   )
 
+  const hasValidSearch = useMemo(() => {
+    const hasId = validId
+    const hasDateRange = searchCriteria.dateStart || searchCriteria.dateEnd
+    return hasId || hasDateRange
+  }, [validId, searchCriteria.dateStart, searchCriteria.dateEnd])
+
   const hasAnyValue = useMemo(() => Object.values(searchCriteria).some((v) => v.trim() !== ""), [searchCriteria])
 
   const handleSearch = async () => {
-    if (!hasAnyValue) return
+    if (!hasValidSearch) return
 
-    if (validId) {
-      // Trigger transaction search mode
-      searchTx(searchCriteria.transactionId.trim().toUpperCase())
-      return
-    }
-
-    // Non-ID search simulation to preserve UX pattern if needed
-    await new Promise((resolve) => setTimeout(resolve, 600))
+    searchByAll({
+      transactionId: searchCriteria.transactionId.trim() || undefined,
+      dateStart: searchCriteria.dateStart || undefined,
+      dateEnd: searchCriteria.dateEnd || undefined,
+    })
   }
 
   const handleClear = async () => {
@@ -73,7 +76,7 @@ function PaymentSearchBox() {
     await queryClient.refetchQueries({ queryKey: ["splunk-data"] })
   }
 
-  const isSearching = validId ? txFetching : false
+  const isSearching = txFetching
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -146,7 +149,7 @@ function PaymentSearchBox() {
             <div className="flex items-end gap-2 flex-shrink-0">
               <Button
                 onClick={handleSearch}
-                disabled={!hasAnyValue || isSearching}
+                disabled={!hasValidSearch || isSearching}
                 className="flex items-center gap-2"
                 size="default"
               >

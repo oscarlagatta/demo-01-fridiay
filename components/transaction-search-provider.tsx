@@ -5,9 +5,16 @@ import { createContext, useContext, useMemo, useState, useCallback } from "react
 import { useTransactionSearch } from "@/hooks/use-transaction-search"
 import type { SplunkTransactionDetails } from "@/types/splunk-transaction"
 
+interface SearchParams {
+  transactionId?: string
+  dateStart?: string
+  dateEnd?: string
+}
+
 type TransactionSearchContextValue = {
   active: boolean
   id: string
+  searchParams: SearchParams
   results?: SplunkTransactionDetails
   isLoading: boolean
   isFetching: boolean
@@ -16,6 +23,7 @@ type TransactionSearchContextValue = {
   invalidId: boolean
   notFound: boolean
   search: (id: string) => void
+  searchByAll: (params: SearchParams) => void
   clear: () => void
   // New: the set of AIT IDs that have data for the active transaction
   matchedAitIds: Set<string>
@@ -27,17 +35,15 @@ type TransactionSearchContextValue = {
 
 const TransactionSearchContext = createContext<TransactionSearchContextValue | null>(null)
 
-// Use an invalid default to keep the query disabled until user searches
-
 export function TransactionSearchProvider({ children }: { children: React.ReactNode }) {
   const [showTableView, setShowTableView] = useState(false)
   const [selectedAitId, setSelectedAitId] = useState<string | null>(null)
 
-  // Initialize hook with invalid default so it doesn't run until a valid search
-  const tx = useTransactionSearch("")
+  const tx = useTransactionSearch({})
 
   console.log("[v0] Provider tx hook state:", {
     id: tx.id,
+    searchParams: tx.searchParams,
     hasResults: !!tx.results,
     resultsLength: tx.results?.length,
     isLoading: tx.isLoading,
@@ -51,7 +57,15 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
     (id: string) => {
       if (!id) return
       console.log("[v0] Provider search called with ID:", id)
-      tx.search(id)
+      tx.searchById(id)
+    },
+    [tx],
+  )
+
+  const searchByAll = useCallback(
+    (params: SearchParams) => {
+      console.log("[v0] Provider searchByAll called with params:", params)
+      tx.searchByAll(params)
     },
     [tx],
   )
@@ -59,21 +73,22 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
   const clear = useCallback(() => {
     setShowTableView(false)
     setSelectedAitId(null)
-    tx.reset("")
+    tx.reset()
   }, [tx])
 
   const active = useMemo(() => {
-    const isActive = tx.id !== "" && (tx.isLoading || tx.isFetching || !!tx.results?.length)
+    const hasSearchParams = !!(tx.searchParams.transactionId || tx.searchParams.dateStart || tx.searchParams.dateEnd)
+    const isActive = hasSearchParams && (tx.isLoading || tx.isFetching || !!tx.results?.length)
     console.log("[v0] Provider active calculation:", {
-      txId: tx.id,
-      idNotEmpty: tx.id !== "",
+      searchParams: tx.searchParams,
+      hasSearchParams,
       isLoading: tx.isLoading,
       isFetching: tx.isFetching,
       hasResults: !!tx.results?.length,
       finalActive: isActive,
     })
     return isActive
-  }, [tx.id, tx.isLoading, tx.isFetching, tx.results])
+  }, [tx.searchParams, tx.isLoading, tx.isFetching, tx.results])
 
   const showTable = useCallback((aitId: string) => {
     setSelectedAitId(aitId)
@@ -92,7 +107,6 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
     firstResult: tx.results?.[0],
   })
 
-  // Derive which AIT IDs are relevant to the current transaction search results
   const matchedAitIds = useMemo(() => {
     const set = new Set<string>()
     if (!active || !tx.results?.length) {
@@ -104,12 +118,10 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
 
     for (const detail of tx.results) {
       console.log("[v0] Processing detail:", detail)
-      // Use direct aitNumber from API response
       if (detail?.aitNumber) {
         console.log("[v0] Found aitNumber:", detail.aitNumber)
         set.add(detail.aitNumber)
       }
-      // Fallback to _raw.AIT_NUMBER if aitNumber is not available at root level
       if (detail?._raw?.AIT_NUMBER) {
         console.log("[v0] Found _raw.AIT_NUMBER:", detail._raw.AIT_NUMBER)
         set.add(detail._raw.AIT_NUMBER)
@@ -124,6 +136,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
     return {
       active,
       id: tx.id,
+      searchParams: tx.searchParams,
       results: tx.results,
       isLoading: tx.isLoading,
       isFetching: tx.isFetching,
@@ -132,6 +145,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
       invalidId: tx.invalidId,
       notFound: tx.notFound,
       search,
+      searchByAll,
       clear,
       matchedAitIds,
       showTableView,
@@ -139,7 +153,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
       showTable,
       hideTable,
     }
-  }, [active, tx, search, clear, matchedAitIds, showTableView, selectedAitId, showTable, hideTable])
+  }, [active, tx, search, searchByAll, clear, matchedAitIds, showTableView, selectedAitId, showTable, hideTable])
 
   return <TransactionSearchContext.Provider value={value}>{children}</TransactionSearchContext.Provider>
 }
