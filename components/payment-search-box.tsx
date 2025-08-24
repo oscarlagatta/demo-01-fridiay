@@ -44,8 +44,9 @@ function PaymentSearchBox() {
   const hasValidSearch = useMemo(() => {
     const hasId = validId
     const hasDateRange = searchCriteria.dateStart || searchCriteria.dateEnd
-    return hasId || hasDateRange
-  }, [validId, searchCriteria.dateStart, searchCriteria.dateEnd])
+    const hasAmount = searchCriteria.transactionAmount.trim() !== ""
+    return hasId || hasDateRange || hasAmount
+  }, [validId, searchCriteria.dateStart, searchCriteria.dateEnd, searchCriteria.transactionAmount])
 
   const hasAnyValue = useMemo(() => Object.values(searchCriteria).some((v) => v.trim() !== ""), [searchCriteria])
 
@@ -54,6 +55,7 @@ function PaymentSearchBox() {
 
     searchByAll({
       transactionId: searchCriteria.transactionId.trim() || undefined,
+      transactionAmount: searchCriteria.transactionAmount.trim() || undefined,
       dateStart: searchCriteria.dateStart || undefined,
       dateEnd: searchCriteria.dateEnd || undefined,
     })
@@ -111,12 +113,16 @@ function PaymentSearchBox() {
               <Input
                 type="text"
                 id="transaction-amount"
-                placeholder="Enter Amount"
+                placeholder="Enter Amount (e.g., 1500)"
                 value={searchCriteria.transactionAmount}
                 onChange={(e) => handleInputChange("transactionAmount", e.target.value)}
                 disabled={isSearching}
               />
-              <div className="h-4" />
+              <div className="h-4">
+                {searchCriteria.transactionAmount && (
+                  <span className="text-[10px] text-muted-foreground">Search by exact amount</span>
+                )}
+              </div>
             </div>
 
             {/* Date Start with spacer */}

@@ -32,6 +32,7 @@ class ApiError extends Error {
 
 interface SearchParams {
   transactionId?: string
+  transactionAmount?: string // Added transactionAmount to SearchParams interface
   dateStart?: string
   dateEnd?: string
 }
@@ -156,7 +157,8 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
   const enabled = useMemo(() => {
     const hasValidId = searchParams.transactionId && ID_REGEX.test(searchParams.transactionId)
     const hasDateRange = searchParams.dateStart || searchParams.dateEnd
-    return !!(hasValidId || hasDateRange)
+    const hasAmount = searchParams.transactionAmount
+    return !!(hasValidId || hasDateRange || hasAmount)
   }, [searchParams])
 
   const heyApiQuery = useGetSplunkUsWiresTransactionDetails(
@@ -178,6 +180,7 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
 
   const searchKey = useMemo(() => {
     if (searchParams.transactionId) return searchParams.transactionId
+    if (searchParams.transactionAmount) return `amount_${searchParams.transactionAmount}`
     if (searchParams.dateStart || searchParams.dateEnd) {
       return `${searchParams.dateStart || "any"}_to_${searchParams.dateEnd || "any"}`
     }
@@ -218,6 +221,7 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
   function searchByAll(params: SearchParams) {
     setSearchParams({
       transactionId: params.transactionId?.toUpperCase(),
+      transactionAmount: params.transactionAmount, // Include transactionAmount in searchByAll
       dateStart: params.dateStart,
       dateEnd: params.dateEnd,
     })
