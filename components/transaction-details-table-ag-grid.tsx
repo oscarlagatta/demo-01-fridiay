@@ -3,6 +3,7 @@
 import { useMemo, useCallback, useState } from "react"
 import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import { AgGridReact } from "ag-grid-react"
 import type { ColDef, GridReadyEvent, ICellRendererParams } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
@@ -15,7 +16,7 @@ interface TransactionRow {
 }
 
 export function TransactionDetailsTableAgGrid() {
-  const { results, selectedAitId, hideTable, id } = useTransactionSearchContext()
+  const { results, selectedAitId, hideTable, id, isTableLoading } = useTransactionSearchContext()
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set())
 
   // Only log essential debugging information
@@ -205,6 +206,87 @@ export function TransactionDetailsTableAgGrid() {
 
   const collapseAllTables = () => {
     setExpandedTables(new Set())
+  }
+
+  if (isTableLoading) {
+    return (
+      <div className="w-full">
+        <div className="border-b bg-white px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={hideTable}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2 bg-transparent"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back</span>
+              </Button>
+              <div>
+                <Skeleton className="h-6 w-48 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-24" />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6 p-6">
+          {/* Skeleton for expandable table sections */}
+          {[1, 2].map((index) => (
+            <div key={index} className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+              {/* Table Header Skeleton */}
+              <div className="bg-gray-50 px-4 py-3 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Skeleton className="h-5 w-5" />
+                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  </div>
+                </div>
+              </div>
+
+              {/* AG Grid Table Skeleton */}
+              <div className="w-full p-4">
+                <div className="space-y-3">
+                  {/* Header row skeleton */}
+                  <div className="flex space-x-2">
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map((col) => (
+                      <Skeleton key={col} className="h-10 flex-1 min-w-[120px]" />
+                    ))}
+                  </div>
+
+                  {/* Data rows skeleton */}
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((row) => (
+                    <div key={row} className="flex space-x-2">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((col) => (
+                        <Skeleton key={col} className="h-8 flex-1 min-w-[120px]" />
+                      ))}
+                    </div>
+                  ))}
+
+                  {/* Pagination skeleton */}
+                  <div className="flex items-center justify-between pt-4">
+                    <Skeleton className="h-8 w-32" />
+                    <div className="flex items-center space-x-2">
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   // Early return with helpful message if no data
