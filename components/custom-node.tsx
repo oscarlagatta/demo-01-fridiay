@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { memo, useMemo } from "react"
+import { memo, useMemo, useState } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card"
 import { useGetSplunk } from "../hooks/use-get-splunk"
@@ -72,10 +72,19 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
     }
   }
 
-  const handleDetailsClick = (e: React.MouseEvent) => {
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false)
+
+  const handleDetailsClick = async (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent node selection
-    if (aitNum) {
-      showTable(aitNum)
+    if (aitNum && !isDetailsLoading) {
+      setIsDetailsLoading(true)
+      try {
+        await showTable(aitNum)
+      } finally {
+        setTimeout(() => {
+          setIsDetailsLoading(false)
+        }, 500)
+      }
     }
   }
 
@@ -197,11 +206,12 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 Summary
               </LoadingButton>
               <LoadingButton
-                isLoading={isTableLoading}
+                isLoading={isDetailsLoading}
                 loadingText="Loading..."
                 variant="outline"
                 className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
                 onClick={handleDetailsClick}
+                disabled={isDetailsLoading}
               >
                 Details
               </LoadingButton>
