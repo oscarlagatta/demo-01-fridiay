@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -36,6 +38,12 @@ function PaymentSearchBox() {
     }))
   }
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && hasValidSearch && !isSearching) {
+      handleSearch()
+    }
+  }
+
   const validId = useMemo(
     () => ID_REGEX.test((searchCriteria.transactionId || "").trim().toUpperCase()),
     [searchCriteria.transactionId],
@@ -43,10 +51,10 @@ function PaymentSearchBox() {
 
   const hasValidSearch = useMemo(() => {
     const hasId = validId
-    const hasDateRange = searchCriteria.dateStart || searchCriteria.dateEnd
     const hasAmount = searchCriteria.transactionAmount.trim() !== ""
-    return hasId || hasDateRange || hasAmount
-  }, [validId, searchCriteria.dateStart, searchCriteria.dateEnd, searchCriteria.transactionAmount])
+    const hasDateRange = searchCriteria.dateStart || searchCriteria.dateEnd
+    return hasId || hasAmount || hasDateRange
+  }, [validId, searchCriteria.transactionAmount, searchCriteria.dateStart, searchCriteria.dateEnd])
 
   const hasAnyValue = useMemo(() => Object.values(searchCriteria).some((v) => v.trim() !== ""), [searchCriteria])
 
@@ -98,6 +106,7 @@ function PaymentSearchBox() {
                 placeholder="Enter Transaction ID"
                 value={searchCriteria.transactionId}
                 onChange={(e) => handleInputChange("transactionId", e.target.value)}
+                onKeyPress={handleKeyPress}
                 disabled={isSearching}
               />
               <div className="h-4">
@@ -113,15 +122,16 @@ function PaymentSearchBox() {
               <Input
                 type="text"
                 id="transaction-amount"
-                placeholder="Enter Amount (e.g., 1500)"
+                placeholder="Enter Amount"
                 value={searchCriteria.transactionAmount}
                 onChange={(e) => handleInputChange("transactionAmount", e.target.value)}
+                onKeyPress={handleKeyPress}
                 disabled={isSearching}
               />
               <div className="h-4">
-                {searchCriteria.transactionAmount && (
-                  <span className="text-[10px] text-muted-foreground">Search by exact amount</span>
-                )}
+                {searchCriteria.transactionAmount.trim() !== "" ? (
+                  <span className="text-[10px] text-green-600">Amount search enabled</span>
+                ) : null}
               </div>
             </div>
 
@@ -133,6 +143,7 @@ function PaymentSearchBox() {
                 id="date-start"
                 value={searchCriteria.dateStart}
                 onChange={(e) => handleInputChange("dateStart", e.target.value)}
+                onKeyPress={handleKeyPress}
                 disabled={isSearching}
               />
               <div className="h-4" />
@@ -146,6 +157,7 @@ function PaymentSearchBox() {
                 id="date-end"
                 value={searchCriteria.dateEnd}
                 onChange={(e) => handleInputChange("dateEnd", e.target.value)}
+                onKeyPress={handleKeyPress}
                 disabled={isSearching}
               />
               <div className="h-4" />

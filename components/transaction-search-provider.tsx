@@ -7,7 +7,7 @@ import type { SplunkTransactionDetails } from "@/types/splunk-transaction"
 
 interface SearchParams {
   transactionId?: string
-  transactionAmount?: string // Added transactionAmount to SearchParams interface
+  transactionAmount?: string
   dateStart?: string
   dateEnd?: string
 }
@@ -32,10 +32,7 @@ type TransactionSearchContextValue = {
   selectedAitId: string | null
   showTable: (aitId: string) => void
   hideTable: () => void
-  showAmountSearchResults: boolean
-  amountSearchParams: { amount: string; dateStart?: string; dateEnd?: string } | null
-  showAmountResults: (amount: string, dateStart?: string, dateEnd?: string) => void
-  hideAmountResults: () => void
+  isTableLoading: boolean
 }
 
 const TransactionSearchContext = createContext<TransactionSearchContextValue | null>(null)
@@ -43,33 +40,13 @@ const TransactionSearchContext = createContext<TransactionSearchContextValue | n
 export function TransactionSearchProvider({ children }: { children: React.ReactNode }) {
   const [showTableView, setShowTableView] = useState(false)
   const [selectedAitId, setSelectedAitId] = useState<string | null>(null)
-  const [showAmountSearchResults, setShowAmountSearchResults] = useState(false)
-  const [amountSearchParams, setAmountSearchParams] = useState<{
-    amount: string
-    dateStart?: string
-    dateEnd?: string
-  } | null>(null)
+  const [isTableLoading, setIsTableLoading] = useState(false)
 
   const tx = useTransactionSearch({})
-
-  console.log("[v0] Provider tx hook state:", {
-    id: tx.id,
-    searchParams: tx.searchParams,
-    hasResults: !!tx.results,
-    resultsLength: tx.results?.length,
-    isLoading: tx.isLoading,
-    isFetching: tx.isFetching,
-    isError: tx.isError,
-    error: tx.error,
-    results: tx.results,
-  })
 
   const search = useCallback(
     (id: string) => {
       if (!id) return
-      console.log("[v0] Provider search called with ID:", id)
-      setShowAmountSearchResults(false)
-      setAmountSearchParams(null)
       tx.searchById(id)
     },
     [tx],
@@ -77,24 +54,6 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
 
   const searchByAll = useCallback(
     (params: SearchParams) => {
-      console.log("[v0] Provider searchByAll called with params:", params)
-
-      if (params.transactionAmount && !params.transactionId) {
-        // This is an amount-only search, show the amount results grid
-        setShowAmountSearchResults(true)
-        setAmountSearchParams({
-          amount: params.transactionAmount,
-          dateStart: params.dateStart,
-          dateEnd: params.dateEnd,
-        })
-        setShowTableView(false)
-        setSelectedAitId(null)
-      } else {
-        // Regular search, hide amount results
-        setShowAmountSearchResults(false)
-        setAmountSearchParams(null)
-      }
-
       tx.searchByAll(params)
     },
     [tx],
@@ -103,8 +62,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
   const clear = useCallback(() => {
     setShowTableView(false)
     setSelectedAitId(null)
-    setShowAmountSearchResults(false)
-    setAmountSearchParams(null)
+    setIsTableLoading(false)
     tx.reset()
   }, [tx])
 
@@ -115,70 +73,44 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
       tx.searchParams.dateStart ||
       tx.searchParams.dateEnd
     )
-    const isActive = hasSearchParams && (tx.isLoading || tx.isFetching || !!tx.results?.length)
-    console.log("[v0] Provider active calculation:", {
-      searchParams: tx.searchParams,
-      hasSearchParams,
-      isLoading: tx.isLoading,
-      isFetching: tx.isFetching,
-      hasResults: !!tx.results?.length,
-      finalActive: isActive,
-    })
-    return isActive
+    return hasSearchParams && (tx.isLoading || tx.isFetching || !!tx.results?.length)
   }, [tx.searchParams, tx.isLoading, tx.isFetching, tx.results])
 
   const showTable = useCallback((aitId: string) => {
+    setIsTableLoading(true)
     setSelectedAitId(aitId)
-    setShowTableView(true)
-    setShowAmountSearchResults(false)
+
+    // Use requestAnimationFrame to ensure smooth transition
+    requestAnimationFrame(() => {
+      setShowTableView(true)
+      // Small delay to allow table to render before removing loading state
+      setTimeout(() => {
+        setIsTableLoading(false)
+      }, 100)
+    })
   }, [])
 
   const hideTable = useCallback(() => {
+    setIsTableLoading(false)
     setShowTableView(false)
     setSelectedAitId(null)
   }, [])
-
-  const showAmountResults = useCallback((amount: string, dateStart?: string, dateEnd?: string) => {
-    setAmountSearchParams({ amount, dateStart, dateEnd })
-    setShowAmountSearchResults(true)
-    setShowTableView(false)
-    setSelectedAitId(null)
-  }, [])
-
-  const hideAmountResults = useCallback(() => {
-    setShowAmountSearchResults(false)
-    setAmountSearchParams(null)
-  }, [])
-
-  console.log("[v0] Provider search state:", {
-    active,
-    hasResults: !!tx.results?.length,
-    resultsCount: tx.results?.length || 0,
-    firstResult: tx.results?.[0],
-  })
 
   const matchedAitIds = useMemo(() => {
     const set = new Set<string>()
     if (!active || !tx.results?.length) {
-      console.log("[v0] No matched AIT IDs - active:", active, "results length:", tx.results?.length)
       return set
     }
 
-    console.log("[v0] Processing results for AIT IDs:", tx.results)
-
     for (const detail of tx.results) {
-      console.log("[v0] Processing detail:", detail)
       if (detail?.aitNumber) {
-        console.log("[v0] Found aitNumber:", detail.aitNumber)
         set.add(detail.aitNumber)
       }
       if (detail?._raw?.AIT_NUMBER) {
-        console.log("[v0] Found _raw.AIT_NUMBER:", detail._raw.AIT_NUMBER)
         set.add(detail._raw.AIT_NUMBER)
       }
     }
 
-    console.log("[v0] Final matchedAitIds:", Array.from(set))
     return set
   }, [active, tx.results])
 
@@ -202,10 +134,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
       selectedAitId,
       showTable,
       hideTable,
-      showAmountSearchResults,
-      amountSearchParams,
-      showAmountResults,
-      hideAmountResults,
+      isTableLoading,
     }
   }, [
     active,
@@ -218,10 +147,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
     selectedAitId,
     showTable,
     hideTable,
-    showAmountSearchResults,
-    amountSearchParams,
-    showAmountResults,
-    hideAmountResults,
+    isTableLoading,
   ])
 
   return <TransactionSearchContext.Provider value={value}>{children}</TransactionSearchContext.Provider>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useTransactionSearchContext } from "./transaction-search-provider"
 
 interface TransactionRow {
@@ -16,7 +17,7 @@ interface TransactionRow {
 }
 
 export function TransactionDetailsTable() {
-  const { results, selectedAitId, hideTable, id } = useTransactionSearchContext()
+  const { results, selectedAitId, hideTable, id, isTableLoading } = useTransactionSearchContext()
 
   // Pagination state for Shadcn table
   const [currentPage, setCurrentPage] = useState(1)
@@ -64,7 +65,6 @@ export function TransactionDetailsTable() {
     return matchingResult?.aitName || `AIT ${aitId}`
   }
 
-  // Filter results for the selected AIT and get all available columns
   const { tableData, columns } = useMemo(() => {
     if (!results || !selectedAitId) return { tableData: [], columns: [] }
 
@@ -105,6 +105,76 @@ export function TransactionDetailsTable() {
   const startIndex = (currentPage - 1) * pageSize
   const endIndex = Math.min(startIndex + pageSize, totalItems)
   const paginatedData = tableData.slice(startIndex, endIndex)
+
+  if (isTableLoading) {
+    return (
+      <div className="h-full w-full bg-white">
+        {/* Header Skeleton */}
+        <div className="border-b bg-white px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-9 w-32" /> {/* Back button skeleton */}
+              <div>
+                <Skeleton className="h-6 w-48 mb-2" /> {/* Title skeleton */}
+                <Skeleton className="h-4 w-64" /> {/* Subtitle skeleton */}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="w-full overflow-x-auto p-6">
+          <div className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+            <Table className="min-w-full">
+              <TableHeader>
+                <TableRow className="border-b bg-gray-50/50">
+                  {/* Column header skeletons */}
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <TableHead key={index} className="py-4 px-6 whitespace-nowrap">
+                      <Skeleton className="h-4 w-24" />
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {/* Row skeletons */}
+                {Array.from({ length: 10 }).map((_, rowIndex) => (
+                  <TableRow key={rowIndex} className={`border-b ${rowIndex % 2 === 1 ? "bg-gray-50/30" : "bg-white"}`}>
+                    {Array.from({ length: 8 }).map((_, cellIndex) => (
+                      <TableCell key={cellIndex} className="py-4 px-6 whitespace-nowrap">
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+
+        {/* Pagination Skeleton */}
+        <div className="border-t bg-white px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-32" /> {/* Selection text skeleton */}
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-4 w-24" /> {/* Rows per page text skeleton */}
+                <Skeleton className="h-8 w-16" /> {/* Select skeleton */}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-4 w-20" /> {/* Page info skeleton */}
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton key={index} className="h-8 w-8" /> /* Pagination button skeletons */
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <TooltipProvider>

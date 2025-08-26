@@ -5,12 +5,16 @@
  *
  * Now uses HeyAPI-generated methods to fetch from real Splunk API:
  * - useGetSplunkUsWiresTransactionDetails: Main hook for fetching transaction data
+ * - useGetSplunkUsWiresTransactionDetailsByAmount: Amount-based search hook
  * - Transforms API response to maintain compatibility with existing UI components
  * - Handles data mapping between new API structure and legacy TransactionSummary format
  */
 
 import { useState, useMemo } from "react"
-import { useGetSplunkUsWiresTransactionDetails } from "@/lib/generated/hooks"
+import {
+  useGetSplunkUsWiresTransactionDetails,
+  useGetSplunkUsWiresTransactionDetailsByAmount,
+} from "@/lib/generated/hooks"
 import type {
   TransactionApiResponse,
   SplunkTransactionDetails,
@@ -32,7 +36,7 @@ class ApiError extends Error {
 
 interface SearchParams {
   transactionId?: string
-  transactionAmount?: string // Added transactionAmount to SearchParams interface
+  transactionAmount?: string
   dateStart?: string
   dateEnd?: string
 }
@@ -156,20 +160,32 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
 
   const enabled = useMemo(() => {
     const hasValidId = searchParams.transactionId && ID_REGEX.test(searchParams.transactionId)
+    const hasAmount = searchParams.transactionAmount && searchParams.transactionAmount.trim() !== ""
     const hasDateRange = searchParams.dateStart || searchParams.dateEnd
-    const hasAmount = searchParams.transactionAmount
-    return !!(hasValidId || hasDateRange || hasAmount)
+    return !!(hasValidId || hasAmount || hasDateRange)
   }, [searchParams])
 
-  const heyApiQuery = useGetSplunkUsWiresTransactionDetails(
+  const useAmountSearch = !!(searchParams.transactionAmount && searchParams.transactionAmount.trim() !== "")
+
+  const idBasedQuery = useGetSplunkUsWiresTransactionDetails(
     searchParams.transactionId || "",
     searchParams.dateStart,
     searchParams.dateEnd,
   )
 
+  const amountBasedQuery = useGetSplunkUsWiresTransactionDetailsByAmount(
+    searchParams.transactionAmount || "",
+    searchParams.dateStart,
+    searchParams.dateEnd,
+  )
+
+  // Select the appropriate query based on search type
+  const heyApiQuery = useAmountSearch ? amountBasedQuery : idBasedQuery
+
   console.log("[v0] Search hook state:", {
     searchParams,
     enabled,
+    useAmountSearch,
     hasData: !!heyApiQuery.data,
     isLoading: heyApiQuery.isLoading,
     isFetching: heyApiQuery.isFetching,
@@ -221,7 +237,7 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
   function searchByAll(params: SearchParams) {
     setSearchParams({
       transactionId: params.transactionId?.toUpperCase(),
-      transactionAmount: params.transactionAmount, // Include transactionAmount in searchByAll
+      transactionAmount: params.transactionAmount,
       dateStart: params.dateStart,
       dateEnd: params.dateEnd,
     })

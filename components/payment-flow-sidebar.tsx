@@ -18,7 +18,9 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
-  MapPin,
+  Coins,
+  Banknote,
+  CircleDollarSign,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -41,10 +43,10 @@ const paymentFlowItems = [
 ]
 
 const apacCountries = [
-  { id: "china", title: "China", subtitle: "China Payment Flow", Icon: MapPin },
-  { id: "taiwan", title: "Taiwan", subtitle: "Taiwan Payment Flow", Icon: MapPin },
-  { id: "malaysia", title: "Malaysia", subtitle: "Malaysia Payment Flow", Icon: MapPin },
-  { id: "korea", title: "Korea", subtitle: "Korea Payment Flow", Icon: MapPin },
+  { id: "china", title: "China", subtitle: "CNY • Mobile Payments", Icon: CircleDollarSign }, // Represents digital yuan and mobile payments (WeChat Pay, Alipay)
+  { id: "taiwan", title: "Taiwan", subtitle: "TWD • Banking Systems", Icon: Banknote }, // Represents New Taiwan Dollar and local banking
+  { id: "malaysia", title: "Malaysia", subtitle: "MYR • E-Wallets", Icon: Coins }, // Represents Malaysian Ringgit and e-wallet systems
+  { id: "korea", title: "Korea", subtitle: "KRW • Digital Pay", Icon: Zap }, // Represents Korean Won and fast digital payments (KakaoPay, Naver Pay)
 ]
 
 type SecondaryBarProps = {
@@ -103,10 +105,9 @@ function SecondarySideBar({
                   onClick={() => onSubItemSelected(item.id)}
                   className={cn(
                     "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors",
-                    selectedSubItem === item.id
-                      ? "bg-slate-800 text-white shadow-md"
-                      : "text-foreground hover:bg-accent",
+                    selectedSubItem === item.id ? "text-white shadow-md" : "text-foreground hover:bg-accent",
                   )}
+                  style={selectedSubItem === item.id ? { backgroundColor: "#1d4ed8" } : undefined}
                 >
                   <item.Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
@@ -130,9 +131,10 @@ function SecondarySideBar({
                 onClick={() => onSubItemSelected(item.id)}
                 className={cn(
                   "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors",
-                  selectedSubItem === item.id ? "bg-slate-800 text-white shadow-md" : "text-foreground hover:bg-accent",
+                  selectedSubItem === item.id ? "text-white shadow-md" : "text-foreground hover:bg-accent",
                   isCollapsed && "justify-center py-2",
                 )}
+                style={selectedSubItem === item.id ? { backgroundColor: "#1d4ed8" } : undefined}
                 title={isCollapsed ? item.title : undefined}
               >
                 <item.Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
@@ -171,10 +173,9 @@ function SecondarySideBar({
                         onClick={() => onSubItemSelected(country.id)}
                         className={cn(
                           "flex w-full items-start gap-3 rounded-lg px-3 py-2 text-left transition-colors",
-                          selectedSubItem === country.id
-                            ? "bg-slate-800 text-white shadow-md"
-                            : "text-foreground hover:bg-accent",
+                          selectedSubItem === country.id ? "text-white shadow-md" : "text-foreground hover:bg-accent",
                         )}
+                        style={selectedSubItem === country.id ? { backgroundColor: "#1d4ed8" } : undefined}
                       >
                         <country.Icon className="h-4 w-4 flex-shrink-0 mt-0.5" />
                         <div className="flex-1 min-w-0">

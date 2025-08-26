@@ -104,6 +104,65 @@
   }
 }
 
+/* Custom node width consistency */
+.react-flow__node-custom {
+  width: 192px !important; /* 12rem / w-48 */
+  min-width: 192px !important;
+  max-width: 192px !important;
+}
+
+@media (min-width: 640px) {
+  .react-flow__node-custom {
+    width: 208px !important; /* 13rem / w-52 */
+    min-width: 208px !important;
+    max-width: 208px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .react-flow__node-custom {
+    width: 224px !important; /* 14rem / w-56 */
+    min-width: 224px !important;
+    max-width: 224px !important;
+  }
+}
+
+/* Visual feedback for node uniformity */
+.react-flow__node-custom::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 1px dashed hsl(var(--muted-foreground) / 0.2);
+  border-radius: calc(var(--radius) + 2px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: -1;
+}
+
+.react-flow__node-custom:hover::before {
+  opacity: 1;
+}
+
+/* Node content overflow handling */
+.react-flow__node-custom .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.react-flow__node-custom .flex-wrap {
+  flex-wrap: wrap;
+}
+
+.react-flow__node-custom .flex-1 {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
 /* ag-Grid customization */
 .ag-theme-alpine {
   --ag-background-color: hsl(var(--background));
