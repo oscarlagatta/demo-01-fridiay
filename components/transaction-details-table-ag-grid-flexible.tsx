@@ -15,6 +15,13 @@ interface TransactionRow {
   [key: string]: any
 }
 
+interface TransactionDetail {
+  aitNumber?: string
+  sourceType?: string
+  _raw?: Record<string, any>
+  [key: string]: any
+}
+
 interface TransactionDetailsTableAgGridFlexibleProps {
   adapter: TransactionTableAdapter
   className?: string
@@ -74,13 +81,14 @@ export function TransactionDetailsTableAgGridFlexible({
       console.log("[v0] Processing results for AIT ID:", selectedAitId, "Total results:", results.length)
     }
 
-    const relevantResults = results.filter((detail) => {
+    const typedResults = results as TransactionDetail[]
+
+    const relevantResults = typedResults.filter((detail: TransactionDetail) => {
       return detail.aitNumber === selectedAitId
     })
 
-    // Group results by sourceType
     const groupedBySourceType = relevantResults.reduce(
-      (acc, detail) => {
+      (acc: Record<string, TransactionDetail[]>, detail: TransactionDetail) => {
         const sourceType = detail.sourceType || "Unknown Source Type"
         if (!acc[sourceType]) {
           acc[sourceType] = []
@@ -88,12 +96,12 @@ export function TransactionDetailsTableAgGridFlexible({
         acc[sourceType].push(detail)
         return acc
       },
-      {} as Record<string, typeof relevantResults>,
+      {} as Record<string, TransactionDetail[]>,
     )
 
     // Get all unique columns from all results
     const allColumnsSet = new Set<string>()
-    relevantResults.forEach((detail) => {
+    relevantResults.forEach((detail: TransactionDetail) => {
       if (detail._raw) {
         const rawData = detail._raw as Record<string, any>
         Object.keys(rawData).forEach((key) => allColumnsSet.add(key))
@@ -101,30 +109,31 @@ export function TransactionDetailsTableAgGridFlexible({
     })
     const allColumns = Array.from(allColumnsSet).sort()
 
-    // Create separate table data for each Source Type
-    const sourceTypeTables = Object.entries(groupedBySourceType).map(([sourceType, details]) => {
-      const rowData: TransactionRow[] = details.map((detail, index) => {
-        const row: TransactionRow = {
-          id: `${sourceType}-${index}`,
+    const sourceTypeTables = Object.entries(groupedBySourceType).map(
+      ([sourceType, details]: [string, TransactionDetail[]]) => {
+        const rowData: TransactionRow[] = details.map((detail: TransactionDetail, index: number) => {
+          const row: TransactionRow = {
+            id: `${sourceType}-${index}`,
+          }
+
+          if (detail._raw) {
+            const rawData = detail._raw as Record<string, any>
+            Object.keys(rawData).forEach((column: string) => {
+              const value = rawData[column]
+              row[column] = value !== null && value !== undefined ? value : ""
+            })
+          }
+
+          return row
+        })
+
+        return {
+          sourceType,
+          recordCount: details.length,
+          rowData,
         }
-
-        if (detail._raw) {
-          const rawData = detail._raw as Record<string, any>
-          Object.keys(rawData).forEach((column) => {
-            const value = rawData[column]
-            row[column] = value !== null && value !== undefined ? value : ""
-          })
-        }
-
-        return row
-      })
-
-      return {
-        sourceType,
-        recordCount: details.length,
-        rowData,
-      }
-    })
+      },
+    )
 
     if (process.env.NODE_ENV === "development") {
       console.log(
@@ -140,7 +149,7 @@ export function TransactionDetailsTableAgGridFlexible({
     (columns: string[]): ColDef[] => {
       const columnDefs: ColDef[] = []
 
-      columns.forEach((column) => {
+      columns.forEach((column: string) => {
         columnDefs.push({
           headerName: config.formatColumnName!(column),
           field: column,
