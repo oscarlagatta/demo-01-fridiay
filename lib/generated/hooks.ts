@@ -6,15 +6,21 @@ import {
   getApiV2SplunkDataGetTransactionDetailsByAmountData,
 } from "./services"
 
-export function useGetSplunkUsWiresTransactionDetails(txId: string, dateStart?: string, dateEnd?: string) {
+export function useGetSplunkUsWiresTransactionDetails(
+  txId: string,
+  dateStart?: string,
+  dateEnd?: string,
+  enabled = true,
+) {
   return useQuery({
     ...getApiV2SplunkDataGetTransactionDetailsDataOptions({
       query: {
-        transactionId: txId || undefined,
-        dateStart,
-        dateEnd,
+        transactionId: enabled ? txId || undefined : undefined,
+        dateStart: enabled ? dateStart : undefined,
+        dateEnd: enabled ? dateEnd : undefined,
       },
     }),
+    enabled, // Pass enabled flag to prevent unnecessary API calls
   })
 }
 
@@ -42,15 +48,17 @@ export function useGetSplunkUsWiresTransactionDetailsByAmount(
   transactionAmount: string,
   dateStart?: string,
   dateEnd?: string,
+  enabled = true,
 ) {
   return useQuery({
     ...getApiV2SplunkDataGetTransactionDetailsByAmountDataOptions({
       query: {
-        transactionAmount: transactionAmount || undefined,
-        dateStart,
-        dateEnd,
+        transactionAmount: enabled ? transactionAmount || undefined : undefined,
+        dateStart: enabled ? dateStart : undefined,
+        dateEnd: enabled ? dateEnd : undefined,
       },
     }),
+    enabled, // Pass enabled flag to prevent unnecessary API calls
   })
 }
 

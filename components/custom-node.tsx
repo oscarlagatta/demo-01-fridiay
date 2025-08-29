@@ -195,29 +195,37 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
             </>
           )}
 
-          {inResultsMode && isMatched && (
+          {inResultsMode && (
             <>
               <LoadingButton
                 isLoading={false}
                 loadingText="..."
                 variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
+                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
+                  isMatched
+                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                    : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                }`}
+                disabled={!isMatched}
               >
                 Summary
               </LoadingButton>
               <LoadingButton
-                isLoading={isDetailsLoading}
+                isLoading={isMatched && isDetailsLoading}
                 loadingText="Loading..."
                 variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
-                onClick={handleDetailsClick}
-                disabled={isDetailsLoading}
+                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
+                  isMatched
+                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                    : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                }`}
+                onClick={isMatched ? handleDetailsClick : undefined}
+                disabled={!isMatched || isDetailsLoading}
               >
                 Details
               </LoadingButton>
             </>
           )}
-          {/* inResultsMode && !isMatched => render nothing for a clean, focused UI */}
         </div>
       </CardContent>
     </Card>
