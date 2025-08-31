@@ -15,6 +15,7 @@ import {
 import { LoadingButton } from "./loading-button"
 import { CardLoadingSkeleton } from "./loading-skeleton"
 import { useTransactionSearchContext } from "./transaction-search-provider"
+import { useAuthzRules } from "../hooks/use-authz-rules"
 
 type CustomNodeData = {
   title: string
@@ -29,7 +30,15 @@ type CustomNodeData = {
 type CustomNodeType = Node<CustomNodeData>
 
 const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
-  const { data: splunkData, isLoading, isError, isFetching } = useGetSplunk()
+  const { isAuthorized } = useAuthzRules()
+  const {
+    data: splunkData,
+    isLoading,
+    isError,
+    isFetching,
+  } = useGetSplunk({
+    enabled: isAuthorized,
+  })
   const {
     active: txActive,
     isFetching: txFetching,
@@ -38,28 +47,22 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
     isTableLoading,
   } = useTransactionSearchContext()
 
-  // Extract AIT number from the node data subtext (format: "AIT {number}")
   const aitNum = useMemo(() => {
     const match = data.subtext.match(/AIT (\d+)/)
     return match ? match[1] : null
   }, [data.subtext, id])
 
-  // Compute trend colors from Splunk data
   const trendColorMapping = useMemo(() => {
     if (!splunkData) return {}
     return computeTrendColors(splunkData)
   }, [splunkData])
 
-  // Compute traffic status colors from Splunk data
   const trafficStatusMapping = useMemo(() => {
     if (!splunkData) return {}
     return computeTrafficStatusColors(splunkData)
   }, [splunkData])
 
-  // Get the trend color for this specific node
   const trendColor: TrendColor = aitNum && trendColorMapping[aitNum] ? trendColorMapping[aitNum] : "grey"
-
-  // Get the traffic status color for this specific node
   const trafficStatusColor: TrafficStatusColor =
     aitNum && trafficStatusMapping[aitNum] ? trafficStatusMapping[aitNum] : "grey"
 
@@ -75,7 +78,7 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   const [isDetailsLoading, setIsDetailsLoading] = useState(false)
 
   const handleDetailsClick = async (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent node selection
+    e.stopPropagation()
     if (aitNum && !isDetailsLoading) {
       setIsDetailsLoading(true)
       try {
@@ -88,12 +91,10 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
     }
   }
 
-  // Determine styling based on selection state and loading
   const getCardClassName = () => {
     let baseClass =
       "w-48 min-w-48 max-w-48 sm:w-52 sm:min-w-52 sm:max-w-52 md:w-56 md:min-w-56 md:max-w-56 border-2 border-[rgb(10,49,97)] shadow-md cursor-pointer transition-all duration-200"
 
-    // Loading state styling
     if (isLoading || isFetching) {
       baseClass += " bg-gray-50"
     } else if (isError) {
@@ -113,17 +114,12 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
     return baseClass
   }
 
-  // Show loading skeleton during initial load of Splunk (baseline) data
   if (isLoading) {
     return (
       <CardLoadingSkeleton className="w-48 min-w-48 max-w-48 sm:w-52 sm:min-w-52 sm:max-w-52 md:w-56 md:min-w-56 md:max-w-56" />
     )
   }
 
-  // Three-phase UI logic for buttons:
-  // 1) Default mode (no txActive): show Flow/Trend/Balanced
-  // 2) Loading mode (txActive && txFetching): show Summary/Details (loading) on all nodes to indicate a fetch is happening
-  // 3) Results mode (txActive && !txFetching): show Summary/Details only on AITs present in matchedAitIds, show NO buttons otherwise
   const inDefaultMode = !txActive
   const inLoadingMode = txActive && txFetching
   const inResultsMode = txActive && !txFetching
@@ -143,87 +139,125 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
       </CardHeader>
       <CardContent className="p-2 pt-0">
         <div className="flex flex-wrap justify-center gap-1 transition-all duration-200">
-          {inDefaultMode && (
+          {!isAuthorized ? (
             <>
               <LoadingButton
-                isLoading={isFetching}
-                loadingText="..."
-                variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${
-                  isError ? "bg-gray-400" : trafficStatusColorClass
-                }`}
-              >
-                Flow
-              </LoadingButton>
-              <LoadingButton
-                isLoading={isFetching}
-                loadingText="..."
-                variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${isError ? "bg-gray-400" : trendColorClass}`}
-              >
-                Trend
-              </LoadingButton>
-              <LoadingButton
-                isLoading={isFetching}
-                loadingText="..."
-                variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-transparent flex-1 min-w-0"
-              >
-                Balanced
-              </LoadingButton>
-            </>
-          )}
-
-          {inLoadingMode && (
-            <>
-              <LoadingButton
-                isLoading={true}
-                loadingText="..."
-                variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
-              >
-                Summary
-              </LoadingButton>
-              <LoadingButton
-                isLoading={true}
-                loadingText="..."
-                variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
-              >
-                Details
-              </LoadingButton>
-            </>
-          )}
-
-          {inResultsMode && (
-            <>
-              <LoadingButton
-                isLoading={false}
+                isLoading={inLoadingMode}
                 loadingText="..."
                 variant="outline"
                 className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                  isMatched
+                  inResultsMode && isMatched
                     ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                    : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                    : inResultsMode && !isMatched
+                      ? "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
                 }`}
-                disabled={!isMatched}
+                disabled={inResultsMode && !isMatched}
               >
                 Summary
               </LoadingButton>
               <LoadingButton
-                isLoading={isMatched && isDetailsLoading}
+                isLoading={inResultsMode && isMatched && isDetailsLoading}
                 loadingText="Loading..."
                 variant="outline"
                 className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                  isMatched
+                  inResultsMode && isMatched
                     ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                    : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                    : inResultsMode && !isMatched
+                      ? "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
                 }`}
-                onClick={isMatched ? handleDetailsClick : undefined}
-                disabled={!isMatched || isDetailsLoading}
+                onClick={inResultsMode && isMatched ? handleDetailsClick : undefined}
+                disabled={(inResultsMode && !isMatched) || isDetailsLoading}
               >
                 Details
               </LoadingButton>
+            </>
+          ) : (
+            <>
+              {inDefaultMode && (
+                <>
+                  <LoadingButton
+                    isLoading={isFetching}
+                    loadingText="..."
+                    variant="outline"
+                    className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${
+                      isError ? "bg-gray-400" : trafficStatusColorClass
+                    }`}
+                  >
+                    Flow
+                  </LoadingButton>
+                  <LoadingButton
+                    isLoading={isFetching}
+                    loadingText="..."
+                    variant="outline"
+                    className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${isError ? "bg-gray-400" : trendColorClass}`}
+                  >
+                    Trend
+                  </LoadingButton>
+                  <LoadingButton
+                    isLoading={isFetching}
+                    loadingText="..."
+                    variant="outline"
+                    className="h-6 px-2 text-[10px] shadow-sm bg-transparent flex-1 min-w-0"
+                  >
+                    Balanced
+                  </LoadingButton>
+                </>
+              )}
+
+              {inLoadingMode && (
+                <>
+                  <LoadingButton
+                    isLoading={true}
+                    loadingText="..."
+                    variant="outline"
+                    className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
+                  >
+                    Summary
+                  </LoadingButton>
+                  <LoadingButton
+                    isLoading={true}
+                    loadingText="..."
+                    variant="outline"
+                    className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
+                  >
+                    Details
+                  </LoadingButton>
+                </>
+              )}
+
+              {inResultsMode && (
+                <>
+                  <LoadingButton
+                    isLoading={false}
+                    loadingText="..."
+                    variant="outline"
+                    className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
+                      isMatched
+                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                        : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                    }`}
+                    disabled={!isMatched}
+                  >
+                    Summary
+                  </LoadingButton>
+                  <LoadingButton
+                    isLoading={isMatched && isDetailsLoading}
+                    loadingText="Loading..."
+                    variant="outline"
+                    className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
+                      isMatched
+                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                        : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                    }`}
+                    onClick={isMatched ? handleDetailsClick : undefined}
+                    disabled={!isMatched || isDetailsLoading}
+                  >
+                    Details
+                  </LoadingButton>
+                </>
+              )}
             </>
           )}
         </div>
