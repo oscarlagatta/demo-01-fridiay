@@ -19,6 +19,7 @@ import "@xyflow/react/dist/style.css"
 import { Loader2, RefreshCw, AlertCircle } from "lucide-react"
 
 import { useGetSplunk } from "../hooks/use-get-splunk"
+import { useAuthzRules } from "../hooks/use-authz-rules"
 import { initialNodes, initialEdges } from "../lib/flow-data"
 import CustomNode from "./custom-node"
 import SectionBackgroundNode from "./section-background-node"
@@ -39,22 +40,40 @@ const GAP_WIDTH = 16
 
 const Flow = () => {
   const { showTableView } = useTransactionSearchContext()
+  const { canDisplayFeature } = useAuthzRules()
   const [nodes, setNodes] = useState<Node[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [connectedNodeIds, setConnectedNodeIds] = useState<Set<string>>(new Set())
   const [connectedEdgeIds, setConnectedEdgeIds] = useState<Set<string>>(new Set())
   const [lastRefetch, setLastRefetch] = useState<Date | null>(null)
+  const [hasPerformedSearch, setHasPerformedSearch] = useState(false)
 
   const width = useStore((state) => state.width)
   const height = useStore((state) => state.height)
 
-  const { data: splunkData, isLoading, isError, error, refetch, isFetching, isSuccess } = useGetSplunk()
+  const shouldFetchSplunk = canDisplayFeature()
+  const {
+    data: splunkData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isFetching,
+    isSuccess,
+  } = useGetSplunk({
+    enabled: shouldFetchSplunk,
+  })
 
   const handleRefetch = async () => {
     try {
+      if (!canDisplayFeature()) {
+        console.log("[v0] User not authorized to refetch Splunk data")
+        return
+      }
       await refetch()
       setLastRefetch(new Date())
+      setHasPerformedSearch(true)
     } catch (error) {
       console.error("Refetch failed:", error)
     }
@@ -241,6 +260,33 @@ const Flow = () => {
   }, [edges, connectedEdgeIds, selectedNodeId])
 
   const renderDataPanel = () => {
+    if (!canDisplayFeature()) {
+      return (
+        <div className="space-y-3">
+          <div className="flex items-center space-x-2 text-amber-600">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-sm font-medium">Limited Access Mode</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            You have limited access to this feature. Contact your administrator for full access.
+          </p>
+          {hasPerformedSearch && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-medium text-gray-600 mb-1">Available Actions:</h4>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline">
+                  Summary
+                </Button>
+                <Button size="sm" variant="outline">
+                  Details
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+
     if (isLoading) {
       return (
         <div className="space-y-3">
@@ -322,6 +368,26 @@ const Flow = () => {
               </div>
             ))}
           </div>
+          <div className="space-y-2">
+            <h4 className="text-xs font-medium text-gray-600 mb-1">Available Actions:</h4>
+            <div className="flex gap-2 flex-wrap">
+              <Button size="sm" variant="outline">
+                Summary
+              </Button>
+              <Button size="sm" variant="outline">
+                Details
+              </Button>
+              <Button size="sm" variant="outline">
+                Flow
+              </Button>
+              <Button size="sm" variant="outline">
+                Trend
+              </Button>
+              <Button size="sm" variant="outline">
+                Balanced
+              </Button>
+            </div>
+          </div>
           <div>
             <h4 className="text-xs font-medium mb-1">Raw Data (first 5 entries):</h4>
             <pre className="text-xs bg-gray-50 p-2 rounded overflow-auto max-h-32">
@@ -341,18 +407,17 @@ const Flow = () => {
 
   return (
     <div className="h-full w-full relative">
-      {/* Refresh Data Button - Icon only, docked top-right */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {lastRefetch && !isFetching && (
           <span className="text-xs text-muted-foreground">Last updated: {lastRefetch.toLocaleTimeString()}</span>
         )}
         <Button
           onClick={handleRefetch}
-          disabled={isFetching}
+          disabled={isFetching || !canDisplayFeature()}
           variant="outline"
           size="sm"
           className="h-8 w-8 p-0 shadow-sm border-blue-200 hover:border-blue-300 hover:bg-blue-50 bg-white"
-          title="Refresh Splunk data"
+          title={canDisplayFeature() ? "Refresh Splunk data" : "Access restricted"}
           aria-label="Refresh Splunk data"
         >
           <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
@@ -378,7 +443,6 @@ const Flow = () => {
         <Background gap={16} size={1} />
       </ReactFlow>
 
-      {/* Selected panel */}
       {selectedNodeId && (
         <div className="absolute top-4 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
@@ -403,6 +467,7 @@ const Flow = () => {
               Clear Selection
             </button>
           </div>
+          <div className="mt-4 pt-4 border-t">{renderDataPanel()}</div>
         </div>
       )}
     </div>
@@ -410,7 +475,6 @@ const Flow = () => {
 }
 
 export function FlowDiagram() {
-  // Use the top-level QueryProvider; only keep ReactFlowProvider here
   return (
     <ReactFlowProvider>
       <Flow />

@@ -1,41 +1,48 @@
-import { useQuery } from '@tanstack/react-query';
-import splunkApiData from '@/lib/splunk-api-data.json';
+import { useQuery } from "@tanstack/react-query"
+import splunkApiData from "@/lib/splunk-api-data.json"
 
 export interface SplunkDataItem {
-  aiT_NUM: string;
-  aiT_NAME: string;
-  floW_DIRECTION: string;
-  floW_AIT_NUM: string;
-  floW_AIT_NAME: string;
-  iS_TRAFFIC_FLOWING: "Yes" | "No" | null;
-  iS_TRAFFIC_ON_TREND: string;
-  averagE_TRANSACTION_COUNT: string;
-  currenT_TRANSACTION_COUNT: string;
-  historiC_STD: string;
-  historiC_MEAN: string;
-  currenT_STD_VARIATION: string;
+  aiT_NUM: string
+  aiT_NAME: string
+  floW_DIRECTION: string
+  floW_AIT_NUM: string
+  floW_AIT_NAME: string
+  iS_TRAFFIC_FLOWING: "Yes" | "No" | null
+  iS_TRAFFIC_ON_TREND: string
+  averagE_TRANSACTION_COUNT: string
+  currenT_TRANSACTION_COUNT: string
+  historiC_STD: string
+  historiC_MEAN: string
+  currenT_STD_VARIATION: string
 }
 
-export function useGetSplunk() {
+export interface UseGetSplunkOptions {
+  enabled?: boolean
+}
+
+export function useGetSplunk(options: UseGetSplunkOptions = {}) {
+  const { enabled = true } = options
+
   const splunkData = useQuery({
-    queryKey: ['splunk-data'],
+    queryKey: ["splunk-data"],
     queryFn: async (): Promise<SplunkDataItem[]> => {
       // Enhanced loading delay to demonstrate loading states
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 2000))
+
       // Simulate potential network issues (uncomment to test error states)
       // if (Math.random() < 0.1) {
       //   throw new Error('Failed to fetch Splunk data');
       // }
-      
+
       // Return the imported JSON data
-      return splunkApiData as SplunkDataItem[];
+      return splunkApiData as SplunkDataItem[]
     },
+    enabled, // Use enabled option to conditionally fetch data
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes (updated from deprecated cacheTime)
     retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  })
 
   return {
     data: splunkData.data,
@@ -44,6 +51,6 @@ export function useGetSplunk() {
     error: splunkData.error,
     refetch: splunkData.refetch,
     isFetching: splunkData.isFetching,
-    isSuccess: splunkData.isSuccess
-  };
+    isSuccess: splunkData.isSuccess,
+  }
 }

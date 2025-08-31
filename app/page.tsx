@@ -5,10 +5,12 @@ import PaymentSearchBox from "../components/payment-search-box"
 import { TransactionSearchProvider } from "../components/transaction-search-provider"
 import { SearchTestingPanel } from "../components/search-testing-panel"
 import { PaymentFlowLayout } from "../components/payment-flow-sidebar"
+import { RoleBasedFeatureDemo } from "../components/role-based-feature-demo"
 import { useState } from "react"
 
 export default function HomePage() {
   const [showTesting, setShowTesting] = useState(false)
+  const [showRoleDemo, setShowRoleDemo] = useState(false)
 
   return (
     <TransactionSearchProvider>
@@ -27,6 +29,12 @@ export default function HomePage() {
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   {showTesting ? "Hide Testing" : "Show Testing"}
+                </button>
+                <button
+                  onClick={() => setShowRoleDemo(!showRoleDemo)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  {showRoleDemo ? "Hide Role Demo" : "Show Role Demo"}
                 </button>
                 <a
                   href="/node-manager"
@@ -47,6 +55,12 @@ export default function HomePage() {
             {showTesting && (
               <div className="mb-6">
                 <SearchTestingPanel />
+              </div>
+            )}
+
+            {showRoleDemo && (
+              <div className="mb-6 flex justify-center">
+                <RoleBasedFeatureDemo />
               </div>
             )}
 
