@@ -30,7 +30,9 @@ type CustomNodeData = {
 type CustomNodeType = Node<CustomNodeData>
 
 const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
-  const { isAuthorized } = useAuthzRules()
+  const { hasRequiredRole } = useAuthzRules()
+  const isAuthorized = hasRequiredRole()
+
   const {
     data: splunkData,
     isLoading,
