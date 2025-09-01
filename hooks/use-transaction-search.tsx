@@ -229,6 +229,10 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
   const notFound = useMemo(() => query.error?.status === 404, [query.error])
 
   function searchById(transactionId: string) {
+    if (typeof transactionId !== "string" || !transactionId) {
+      console.warn("[v0] searchById called with invalid transactionId:", transactionId)
+      return
+    }
     setSearchParams({ transactionId: transactionId.toUpperCase() })
   }
 
@@ -237,8 +241,13 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
   }
 
   function searchByAll(params: SearchParams) {
+    const validatedTransactionId =
+      params.transactionId && typeof params.transactionId === "string" && params.transactionId.trim()
+        ? params.transactionId.toUpperCase()
+        : undefined
+
     setSearchParams({
-      transactionId: params.transactionId?.toUpperCase(),
+      transactionId: validatedTransactionId,
       transactionAmount: params.transactionAmount,
       dateStart: params.dateStart,
       dateEnd: params.dateEnd,
