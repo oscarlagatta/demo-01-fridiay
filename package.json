@@ -9,6 +9,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@bofa/feature-flags": "latest",
     "@bps-payment-monitor/data-access": "latest",
     "@bps-payment-monitor/utils": "latest",
     "@hookform/resolvers": "^3.9.1",
