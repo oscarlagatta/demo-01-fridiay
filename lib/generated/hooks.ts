@@ -1,75 +1,58 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import {
-  getApiV2SplunkDataGetTransactionDetailsData,
-  getApiV2SplunkDataGetTransactionDetailsByAmountData,
-} from "./services"
+import type { GetApiV2SplunkDataGetTransactionDetailsDataResponse } from "./types"
 
-export function useGetSplunkUsWiresTransactionDetails(txId: string, dateStart?: string, dateEnd?: string) {
+export function useGetSplunkUsWiresTransactionDetails(
+  txId: string,
+  dateStart?: string,
+  dateEnd?: string,
+  enabled = true,
+) {
   return useQuery({
-    ...getApiV2SplunkDataGetTransactionDetailsDataOptions({
-      query: {
-        transactionId: txId || undefined,
-        dateStart,
-        dateEnd,
-      },
-    }),
-  })
-}
+    queryKey: ["splunk-transaction-details", { txId, dateStart, dateEnd }],
+    queryFn: async (): Promise<GetApiV2SplunkDataGetTransactionDetailsDataResponse[]> => {
+      const params = new URLSearchParams()
+      if (enabled && txId) params.append("transactionId", txId)
+      if (enabled && dateStart) params.append("dateStart", dateStart)
+      if (enabled && dateEnd) params.append("dateEnd", dateEnd)
 
-export const getApiV2SplunkDataGetTransactionDetailsDataOptions = (options?: {
-  query?: {
-    transactionId?: string
-    dateStart?: string
-    dateEnd?: string
-  }
-}) => {
-  return {
-    queryFn: async ({ queryKey }: { queryKey: any[] }) => {
-      const { data } = await getApiV2SplunkDataGetTransactionDetailsData({
-        ...options,
-        ...queryKey[0],
-        throwOnError: true,
-      })
-      return data
+      const response = await fetch(`/api/v2/SplunkData/GetTransactionDetailsData?${params}`)
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return Array.isArray(data) ? data : [data]
     },
-    queryKey: [options],
-  }
+    enabled,
+  })
 }
 
 export function useGetSplunkUsWiresTransactionDetailsByAmount(
   transactionAmount: string,
   dateStart?: string,
   dateEnd?: string,
+  enabled = true,
 ) {
   return useQuery({
-    ...getApiV2SplunkDataGetTransactionDetailsByAmountDataOptions({
-      query: {
-        transactionAmount: transactionAmount || undefined,
-        dateStart,
-        dateEnd,
-      },
-    }),
-  })
-}
+    queryKey: ["splunk-transaction-details-by-amount", { transactionAmount, dateStart, dateEnd }],
+    queryFn: async (): Promise<GetApiV2SplunkDataGetTransactionDetailsDataResponse[]> => {
+      const params = new URLSearchParams()
+      if (enabled && transactionAmount) params.append("transactionAmount", transactionAmount)
+      if (enabled && dateStart) params.append("dateStart", dateStart)
+      if (enabled && dateEnd) params.append("dateEnd", dateEnd)
 
-export const getApiV2SplunkDataGetTransactionDetailsByAmountDataOptions = (options?: {
-  query?: {
-    transactionAmount?: string
-    dateStart?: string
-    dateEnd?: string
-  }
-}) => {
-  return {
-    queryFn: async ({ queryKey }: { queryKey: any[] }) => {
-      const { data } = await getApiV2SplunkDataGetTransactionDetailsByAmountData({
-        ...options,
-        ...queryKey[0],
-        throwOnError: true,
-      })
-      return data
+      const response = await fetch(`/api/v2/SplunkData/GetTransactionDetailsByAmountData?${params}`)
+
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      return Array.isArray(data) ? data : [data]
     },
-    queryKey: [options],
-  }
+    enabled,
+  })
 }
