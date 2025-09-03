@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useTransactionSearchContext } from "./transaction-search-provider"
+import { useFlowAwareTransactionSearchContext } from "./flow-aware-transaction-search-provider"
 
 interface TransactionRow {
   id: string
@@ -17,7 +17,8 @@ interface TransactionRow {
 }
 
 export function TransactionDetailsTable() {
-  const { results, selectedAitId, hideTable, id, isTableLoading } = useTransactionSearchContext()
+  const { flowFilteredResults, selectedAitId, hideTable, id, isTableLoading, currentFlowName } =
+    useFlowAwareTransactionSearchContext()
 
   // Pagination state for Shadcn table
   const [currentPage, setCurrentPage] = useState(1)
@@ -59,16 +60,16 @@ export function TransactionDetailsTable() {
   }
 
   const getSystemName = (aitId: string) => {
-    if (!results) return `AIT ${aitId}`
+    if (!flowFilteredResults) return `AIT ${aitId}`
 
-    const matchingResult = results.find((result) => result.aitNumber === aitId)
+    const matchingResult = flowFilteredResults.find((result) => result.aitNumber === aitId)
     return matchingResult?.aitName || `AIT ${aitId}`
   }
 
   const { tableData, columns } = useMemo(() => {
-    if (!results || !selectedAitId) return { tableData: [], columns: [] }
+    if (!flowFilteredResults || !selectedAitId) return { tableData: [], columns: [] }
 
-    const relevantResults = results.filter((detail) => {
+    const relevantResults = flowFilteredResults.filter((detail) => {
       return detail.aitNumber === selectedAitId
     })
 
@@ -97,7 +98,7 @@ export function TransactionDetailsTable() {
     })
 
     return { tableData, columns: sortedColumns }
-  }, [results, selectedAitId])
+  }, [flowFilteredResults, selectedAitId])
 
   // Pagination calculations for Shadcn table
   const totalItems = tableData.length
@@ -195,7 +196,7 @@ export function TransactionDetailsTable() {
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">Transaction Details</h1>
                 <p className="text-sm text-gray-600">
-                  {getSystemName(selectedAitId || "")} • Transaction ID: {id}
+                  {getSystemName(selectedAitId || "")} • {currentFlowName} • Transaction ID: {id}
                 </p>
               </div>
             </div>

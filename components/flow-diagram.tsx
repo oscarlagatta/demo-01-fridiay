@@ -26,7 +26,7 @@ import { computeTrafficStatusColors } from "../lib/traffic-status-utils"
 import { Button } from "./ui/button"
 import { Skeleton } from "./ui/skeleton"
 import { TransactionDetailsTable } from "./transaction-details-table"
-import { useTransactionSearchContext } from "./transaction-search-provider"
+import { useMultiContextSearch } from "./multi-context-search-provider"
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -38,7 +38,10 @@ const SECTION_WIDTH_PROPORTIONS = [0.2, 0.2, 0.25, 0.35]
 const GAP_WIDTH = 16
 
 const Flow = () => {
-  const { showTableView } = useTransactionSearchContext()
+  const multiContextSearch = useMultiContextSearch()
+  const showTableView = multiContextSearch?.hasResults && false // Temporarily disable table view
+  const currentFlowName = multiContextSearch?.currentFlowName || "Unknown Flow"
+
   const [nodes, setNodes] = useState<Node[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
@@ -341,8 +344,8 @@ const Flow = () => {
 
   return (
     <div className="h-full w-full relative">
-      {/* Refresh Data Button - Icon only, docked top-right */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
+        <span className="text-xs text-muted-foreground bg-white px-2 py-1 rounded border">{currentFlowName}</span>
         {lastRefetch && !isFetching && (
           <span className="text-xs text-muted-foreground">Last updated: {lastRefetch.toLocaleTimeString()}</span>
         )}
@@ -378,7 +381,6 @@ const Flow = () => {
         <Background gap={16} size={1} />
       </ReactFlow>
 
-      {/* Selected panel */}
       {selectedNodeId && (
         <div className="absolute top-4 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
@@ -410,7 +412,6 @@ const Flow = () => {
 }
 
 export function FlowDiagram() {
-  // Use the top-level QueryProvider; only keep ReactFlowProvider here
   return (
     <ReactFlowProvider>
       <Flow />

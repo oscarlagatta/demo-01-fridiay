@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useTransactionSearchContext } from "./transaction-search-provider"
+import { useFlowAwareTransactionSearchContext } from "./flow-aware-transaction-search-provider"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +16,7 @@ interface TestResult {
 export function SearchTestingPanel() {
   const [testResults, setTestResults] = useState<TestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
-  const searchContext = useTransactionSearchContext()
+  const searchContext = useFlowAwareTransactionSearchContext()
 
   const runTests = async () => {
     setIsRunning(true)
@@ -24,26 +24,33 @@ export function SearchTestingPanel() {
 
     // Test 1: Search Context State Validation
     results.push({
-      test: "Search Context State",
+      test: "Flow-Aware Search Context State",
       status: searchContext ? "pass" : "fail",
-      message: searchContext ? "Context is available" : "Context is missing",
+      message: searchContext ? `Context available for ${searchContext.currentFlowName}` : "Context is missing",
       data: {
         active: searchContext?.active,
-        hasResults: searchContext?.results?.results?.length > 0,
+        currentFlow: searchContext?.currentFlowName,
+        hasResults: searchContext?.results?.length > 0,
+        hasFilteredResults: searchContext?.flowFilteredResults?.length > 0,
         matchedAitIds: Array.from(searchContext?.matchedAitIds || []),
+        supportedCurrencies: searchContext?.supportedCurrencies,
       },
     })
 
     // Test 2: API Response Structure Validation
-    if (searchContext?.results?.results) {
-      const firstResult = searchContext.results.results[0]
+    if (searchContext?.flowFilteredResults) {
+      const firstResult = searchContext.flowFilteredResults[0]
       const hasRequiredFields = firstResult?.aitNumber && firstResult?.aitName
 
       results.push({
-        test: "API Response Structure",
+        test: "Flow-Filtered API Response Structure",
         status: hasRequiredFields ? "pass" : "fail",
-        message: hasRequiredFields ? "Required fields present" : "Missing aitNumber or aitName",
+        message: hasRequiredFields
+          ? "Required fields present in filtered results"
+          : "Missing aitNumber or aitName in filtered results",
         data: {
+          originalCount: searchContext.results?.length || 0,
+          filteredCount: searchContext.flowFilteredResults.length,
           aitNumber: firstResult?.aitNumber,
           aitName: firstResult?.aitName,
           source: firstResult?.source,
@@ -73,18 +80,24 @@ export function SearchTestingPanel() {
       data: { extractedAitIds: extractedAitIds.slice(0, 10) }, // Show first 10
     })
 
-    // Test 4: AIT ID Matching Logic
+    // Test 4: Flow-Specific AIT ID Matching Logic
     const matchedIds = Array.from(searchContext?.matchedAitIds || [])
     const hasMatches = matchedIds.length > 0
     const matchingNodes = extractedAitIds.filter((id) => matchedIds.includes(id))
 
     results.push({
-      test: "AIT ID Matching",
+      test: "Flow-Specific AIT ID Matching",
       status: hasMatches ? (matchingNodes.length > 0 ? "pass" : "warning") : "fail",
       message: hasMatches
-        ? `${matchingNodes.length} nodes match ${matchedIds.length} search results`
-        : "No matched AIT IDs found",
-      data: { matchedIds, matchingNodes },
+        ? `${matchingNodes.length} nodes match ${matchedIds.length} flow-filtered search results`
+        : "No matched AIT IDs found in current flow",
+      data: {
+        currentFlow: searchContext?.currentFlowName,
+        matchedIds,
+        matchingNodes,
+        originalResults: searchContext?.results?.length || 0,
+        filteredResults: searchContext?.flowFilteredResults?.length || 0,
+      },
     })
 
     // Test 5: Button State Validation
@@ -100,7 +113,7 @@ export function SearchTestingPanel() {
     })
 
     const expectedButtonStates = searchContext?.active
-      ? searchContext.results?.results?.length > 0
+      ? searchContext.results?.length > 0
         ? ["Summary", "Details"]
         : ["Loading..."]
       : ["Flow", "Trend", "Balanced"]
@@ -123,7 +136,7 @@ export function SearchTestingPanel() {
     // Test 6: Search Flow Validation
     const searchFlowValid =
       !searchContext?.active ||
-      (searchContext.active && (searchContext.results?.results?.length > 0 || searchContext.isFetching))
+      (searchContext.active && (searchContext.results?.length > 0 || searchContext.isFetching))
 
     results.push({
       test: "Search Flow State",
@@ -132,7 +145,7 @@ export function SearchTestingPanel() {
       data: {
         active: searchContext?.active,
         isFetching: searchContext?.isFetching,
-        hasResults: searchContext?.results?.results?.length > 0,
+        hasResults: searchContext?.results?.length > 0,
         hasError: searchContext?.isError,
       },
     })

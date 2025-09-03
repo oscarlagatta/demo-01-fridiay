@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import {
   Heart,
   ArrowLeftToLine,
@@ -24,7 +23,8 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { TransactionSearchProvider } from "@/components/transaction-search-provider"
+import { FlowContextProvider } from "@/components/flow-context-provider"
+import { MultiContextSearchProvider } from "@/components/multi-context-search-provider"
 
 const mainPageItems = [
   { id: "home-dashboard", title: "Home Dashboard", subtitle: "Overview and analytics", Icon: Home },
@@ -207,8 +207,13 @@ function SecondarySideBar({
 
 export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
   const [selectedMainItem] = useState("e2e-monitor")
-  const [selectedSubItem, setSelectedSubItem] = useState("us-wires") // Set us-wires as default
+  const [selectedSubItem, setSelectedSubItem] = useState("us-wires")
   const [secondarySidebarCollapsed, setSecondarySidebarCollapsed] = useState(false)
+
+  const handleFlowChange = useCallback((flowId: string) => {
+    console.log("[v0] Flow changed in sidebar:", { flowId })
+    setSelectedSubItem(flowId)
+  }, [])
 
   const renderContent = () => {
     switch (selectedSubItem) {
@@ -315,19 +320,24 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <TransactionSearchProvider>
-      <div className="flex min-h-screen w-full">
-        <div className="flex flex-col">
-          <SecondarySideBar
-            selectedSubItem={selectedSubItem}
-            onSubItemSelected={setSelectedSubItem}
-            isVisible={selectedMainItem === "e2e-monitor"}
-            isCollapsed={secondarySidebarCollapsed}
-            onToggleCollapse={() => setSecondarySidebarCollapsed(!secondarySidebarCollapsed)}
-          />
+    <FlowContextProvider initialFlow={selectedSubItem as any} onFlowChange={handleFlowChange}>
+      <MultiContextSearchProvider>
+        <div className="flex min-h-screen w-full">
+          <div className="flex flex-col">
+            <SecondarySideBar
+              selectedSubItem={selectedSubItem}
+              onSubItemSelected={(flowId) => {
+                setSelectedSubItem(flowId)
+                handleFlowChange(flowId)
+              }}
+              isVisible={selectedMainItem === "e2e-monitor"}
+              isCollapsed={secondarySidebarCollapsed}
+              onToggleCollapse={() => setSecondarySidebarCollapsed(!secondarySidebarCollapsed)}
+            />
+          </div>
+          <main className="bg-background flex flex-1 flex-col">{renderContent()}</main>
         </div>
-        <main className="bg-background flex flex-1 flex-col">{renderContent()}</main>
-      </div>
-    </TransactionSearchProvider>
+      </MultiContextSearchProvider>
+    </FlowContextProvider>
   )
 }

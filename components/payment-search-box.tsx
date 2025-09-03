@@ -1,14 +1,13 @@
 "use client"
 
 import type React from "react"
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search, X } from "lucide-react"
 import { useMemo, useState } from "react"
-import { useTransactionSearchContext } from "@/components/transaction-search-provider"
+import { useFlowAwareTransactionSearchContext } from "@/components/flow-aware-transaction-search-provider"
 import { useQueryClient } from "@tanstack/react-query"
 
 const ID_REGEX = /^[A-Z0-9]{16}$/
@@ -29,7 +28,13 @@ function PaymentSearchBox() {
   })
 
   const queryClient = useQueryClient()
-  const { searchByAll, clear: clearTx, isFetching: txFetching } = useTransactionSearchContext()
+  const {
+    searchByAll,
+    clear: clearTx,
+    isFetching: txFetching,
+    currentFlowName,
+    supportedCurrencies,
+  } = useFlowAwareTransactionSearchContext()
 
   const handleInputChange = (field: keyof SearchCriteria, value: string) => {
     setSearchCriteria((prev) => ({
@@ -93,7 +98,15 @@ function PaymentSearchBox() {
       <Card>
         <CardHeader>
           <CardTitle>Search for a transaction</CardTitle>
-          <CardDescription>You can search for a transaction by ID, Amount, or Date Range.</CardDescription>
+          <CardDescription>
+            You can search for a transaction by ID, Amount, or Date Range. Currently searching in:{" "}
+            <strong>{currentFlowName}</strong>
+            {supportedCurrencies.length > 0 && (
+              <span className="text-xs text-muted-foreground block mt-1">
+                Supported currencies: {supportedCurrencies.join(", ")}
+              </span>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 items-end max-w-full">
