@@ -1,5 +1,7 @@
 "use client"
 import { useState, useCallback, useEffect, useMemo } from "react"
+import type React from "react"
+
 import {
   ReactFlow,
   Background,
@@ -27,6 +29,11 @@ import { Button } from "./ui/button"
 import { Skeleton } from "./ui/skeleton"
 import { TransactionDetailsTable } from "./transaction-details-table"
 import { useTransactionSearchContext } from "./transaction-search-provider"
+import { NodeContextMenu, EdgeContextMenu } from "./context-menu"
+import { EdgeModificationModal } from "./edge-modification-modal"
+import { NodeNameEditModal } from "./node-name-edit-modal"
+import { ChangeHistoryPanel } from "./change-history-panel"
+import { useChangeTrackingContext } from "./change-tracking-provider"
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -39,12 +46,26 @@ const GAP_WIDTH = 16
 
 const Flow = () => {
   const { showTableView } = useTransactionSearchContext()
+  const { trackChange } = useChangeTrackingContext()
   const [nodes, setNodes] = useState<Node[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [connectedNodeIds, setConnectedNodeIds] = useState<Set<string>>(new Set())
   const [connectedEdgeIds, setConnectedEdgeIds] = useState<Set<string>>(new Set())
   const [lastRefetch, setLastRefetch] = useState<Date | null>(null)
+  const [contextMenu, setContextMenu] = useState<{
+    type: "node" | "edge"
+    x: number
+    y: number
+    nodeId?: string
+    edgeId?: string
+    sourceNode?: string
+    targetNode?: string
+  } | null>(null)
+  const [edgeModalOpen, setEdgeModalOpen] = useState(false)
+  const [nodeModalOpen, setNodeModalOpen] = useState(false)
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null)
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null)
 
   const width = useStore((state) => state.width)
   const height = useStore((state) => state.height)
@@ -98,6 +119,166 @@ const Flow = () => {
       }
     },
     [selectedNodeId, findConnections, isLoading, isFetching],
+  )
+
+  const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault()
+
+    if (node.type === "background") return
+
+    setContextMenu({
+      type: "node",
+      x: event.clientX,
+      y: event.clientY,
+      nodeId: node.id,
+    })
+  }, [])
+
+  const handleEdgeContextMenu = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      event.preventDefault()
+
+      const sourceNode = nodes.find((n) => n.id === edge.source)
+      const targetNode = nodes.find((n) => n.id === edge.target)
+
+      setContextMenu({
+        type: "edge",
+        x: event.clientX,
+        y: event.clientY,
+        edgeId: edge.id,
+        sourceNode: sourceNode?.data?.title || edge.source,
+        targetNode: targetNode?.data?.title || edge.target,
+      })
+    },
+    [nodes],
+  )
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu(null)
+  }, [])
+
+  const handleEditNodeName = useCallback(
+    (nodeId: string) => {
+      const node = nodes.find((n) => n.id === nodeId)
+      if (node) {
+        setSelectedNode(node)
+        setNodeModalOpen(true)
+      }
+    },
+    [nodes],
+  )
+
+  const handleEditNodeEdges = useCallback(
+    (nodeId: string) => {
+      console.log("[v0] Edit edges for node:", nodeId)
+      const node = nodes.find((n) => n.id === nodeId)
+      if (node) {
+        const connectedEdges = edges.filter((edge) => edge.source === nodeId || edge.target === nodeId)
+
+        if (connectedEdges.length > 0) {
+          setSelectedEdge(connectedEdges[0])
+          setEdgeModalOpen(true)
+        } else {
+          console.log("[v0] No edges found for node:", nodeId)
+        }
+      }
+    },
+    [nodes, edges],
+  )
+
+  const handleViewNodeDetails = useCallback(
+    (nodeId: string) => {
+      handleNodeClick(nodeId)
+    },
+    [handleNodeClick],
+  )
+
+  const handleEditEdge = useCallback(
+    (edgeId: string) => {
+      const edge = edges.find((e) => e.id === edgeId)
+      if (edge) {
+        setSelectedEdge(edge)
+        setEdgeModalOpen(true)
+      }
+    },
+    [edges],
+  )
+
+  const handleDeleteEdge = useCallback(
+    (edgeId: string) => {
+      const edge = edges.find((e) => e.id === edgeId)
+      if (edge) {
+        const sourceNode = nodes.find((n) => n.id === edge.source)
+        const targetNode = nodes.find((n) => n.id === edge.target)
+        const edgeName = `${sourceNode?.data?.title || edge.source} → ${targetNode?.data?.title || edge.target}`
+
+        trackChange("edge", edgeId, edgeName, "deleted")
+        setEdges((eds) => eds.filter((e) => e.id !== edgeId))
+      }
+    },
+    [edges, nodes, trackChange],
+  )
+
+  const handleSaveNode = useCallback(
+    (nodeId: string, updates: { title: string; description?: string }) => {
+      const oldNode = nodes.find((n) => n.id === nodeId)
+      if (!oldNode) return
+
+      const changes: Record<string, { from: any; to: any }> = {}
+      if (oldNode.data.title !== updates.title) {
+        changes.title = { from: oldNode.data.title, to: updates.title }
+      }
+      if (oldNode.data.description !== updates.description) {
+        changes.description = { from: oldNode.data.description || "", to: updates.description || "" }
+      }
+
+      setNodes((nds) =>
+        nds.map((node) =>
+          node.id === nodeId
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  title: updates.title,
+                  description: updates.description,
+                  lastModified: new Date().toISOString(),
+                  modifiedBy: "Current User",
+                },
+              }
+            : node,
+        ),
+      )
+
+      trackChange("node", nodeId, updates.title, "updated", changes)
+      setNodeModalOpen(false)
+      setSelectedNode(null)
+    },
+    [nodes, trackChange],
+  )
+
+  const handleSaveEdge = useCallback(
+    (edgeId: string, updates: Partial<Edge>) => {
+      const oldEdge = edges.find((e) => e.id === edgeId)
+      if (!oldEdge) return
+
+      const changes: Record<string, { from: any; to: any }> = {}
+      Object.keys(updates).forEach((key) => {
+        if (key !== "data" && oldEdge[key as keyof Edge] !== updates[key as keyof Edge]) {
+          changes[key] = { from: oldEdge[key as keyof Edge], to: updates[key as keyof Edge] }
+        }
+      })
+
+      setEdges((eds) => eds.map((edge) => (edge.id === edgeId ? { ...edge, ...updates } : edge)))
+
+      const sourceNode = nodes.find((n) => n.id === (updates.source || oldEdge.source))
+      const targetNode = nodes.find((n) => n.id === (updates.target || oldEdge.target))
+      const edgeName = `${sourceNode?.data?.title || updates.source || oldEdge.source} → ${targetNode?.data?.title || updates.target || oldEdge.target}`
+
+      trackChange("edge", edgeId, edgeName, "updated", changes)
+      setEdgeModalOpen(false)
+      setSelectedEdge(null)
+    },
+    [edges, nodes, trackChange],
   )
 
   const getConnectedSystemNames = useCallback(() => {
@@ -341,7 +522,6 @@ const Flow = () => {
 
   return (
     <div className="h-full w-full relative">
-      {/* Refresh Data Button - Icon only, docked top-right */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {lastRefetch && !isFetching && (
           <span className="text-xs text-muted-foreground">Last updated: {lastRefetch.toLocaleTimeString()}</span>
@@ -365,6 +545,8 @@ const Flow = () => {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeContextMenu={handleNodeContextMenu}
+        onEdgeContextMenu={handleEdgeContextMenu}
         nodeTypes={nodeTypes}
         proOptions={{ hideAttribution: true }}
         className="bg-white"
@@ -378,7 +560,6 @@ const Flow = () => {
         <Background gap={16} size={1} />
       </ReactFlow>
 
-      {/* Selected panel */}
       {selectedNodeId && (
         <div className="absolute top-4 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
@@ -405,12 +586,65 @@ const Flow = () => {
           </div>
         </div>
       )}
+
+      <div className="absolute bottom-4 right-4 z-10 w-80">
+        <ChangeHistoryPanel
+          entityId={selectedNodeId || undefined}
+          entityName={selectedNodeId ? nodes.find((n) => n.id === selectedNodeId)?.data?.title : undefined}
+        />
+      </div>
+
+      {contextMenu && contextMenu.type === "node" && contextMenu.nodeId && (
+        <NodeContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          nodeId={contextMenu.nodeId}
+          nodeName={nodes.find((n) => n.id === contextMenu.nodeId)?.data?.title || contextMenu.nodeId}
+          onClose={closeContextMenu}
+          onEditName={handleEditNodeName}
+          onEditEdges={handleEditNodeEdges}
+          onViewDetails={handleViewNodeDetails}
+        />
+      )}
+
+      {contextMenu && contextMenu.type === "edge" && contextMenu.edgeId && (
+        <EdgeContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          edgeId={contextMenu.edgeId}
+          sourceNode={contextMenu.sourceNode || ""}
+          targetNode={contextMenu.targetNode || ""}
+          onClose={closeContextMenu}
+          onEditEdge={handleEditEdge}
+          onDeleteEdge={handleDeleteEdge}
+        />
+      )}
+
+      <EdgeModificationModal
+        isOpen={edgeModalOpen}
+        onClose={() => {
+          setEdgeModalOpen(false)
+          setSelectedEdge(null)
+        }}
+        edge={selectedEdge}
+        nodes={nodes}
+        onSave={handleSaveEdge}
+      />
+
+      <NodeNameEditModal
+        isOpen={nodeModalOpen}
+        onClose={() => {
+          setNodeModalOpen(false)
+          setSelectedNode(null)
+        }}
+        node={selectedNode}
+        onSave={handleSaveNode}
+      />
     </div>
   )
 }
 
 export function FlowDiagram() {
-  // Use the top-level QueryProvider; only keep ReactFlowProvider here
   return (
     <ReactFlowProvider>
       <Flow />

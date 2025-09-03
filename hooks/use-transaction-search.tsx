@@ -171,14 +171,12 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
     searchParams.transactionId || "",
     searchParams.dateStart,
     searchParams.dateEnd,
-    enabled && !useAmountSearch, // Only enable if not using amount search
   )
 
   const amountBasedQuery = useGetSplunkUsWiresTransactionDetailsByAmount(
     searchParams.transactionAmount || "",
     searchParams.dateStart,
     searchParams.dateEnd,
-    enabled && useAmountSearch, // Only enable if using amount search
   )
 
   // Select the appropriate query based on search type

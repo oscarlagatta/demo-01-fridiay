@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AppInit } from "@/components/app-init"
 import { QueryProvider } from "@/components/query-provider"
+import { ChangeTrackingProvider } from "@/components/change-tracking-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,7 +25,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AppInit />
-          <QueryProvider>{children}</QueryProvider>
+          <QueryProvider>
+            <ChangeTrackingProvider>{children}</ChangeTrackingProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

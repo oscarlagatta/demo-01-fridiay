@@ -15,7 +15,13 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./"]
+      "@/*": ["./"],
+      "@bps-payment-monitor/data-access": ["libs/bps-payment-monitor/bps-payment-monitor-data-access/src/index.ts"],
+      "@bps-payment-monitor/ui": ["libs/bps-payment-monitor/bps-payment-monitor-ui/src/index.ts"],
+      "@bps-payment-monitor/utils": ["libs/bps-payment-monitor/bps-payment-monitor-utils/src/index.ts"],
+      "@bps-payment-monitor/feature-payment-monitor-layout": [
+        "libs/bps-payment-monitor/features/feature-payment-monitor-layout/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]
