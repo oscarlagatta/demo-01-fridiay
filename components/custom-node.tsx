@@ -146,14 +146,15 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
               <LoadingButton
                 isLoading={inLoadingMode}
                 loadingText="..."
-                variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                  inResultsMode && isMatched
-                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                    : inResultsMode && !isMatched
-                      ? "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                }`}
+                variant="default"
+                style={{
+                  backgroundColor:
+                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
+                  color: inResultsMode && !isMatched ? "#1f2937" : "#ffffff",
+                  borderColor:
+                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
+                }}
+                className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
                 disabled={inResultsMode && !isMatched}
               >
                 Summary
@@ -161,14 +162,15 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
               <LoadingButton
                 isLoading={inResultsMode && isMatched && isDetailsLoading}
                 loadingText="Loading..."
-                variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                  inResultsMode && isMatched
-                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                    : inResultsMode && !isMatched
-                      ? "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
-                      : "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                }`}
+                variant="default"
+                style={{
+                  backgroundColor:
+                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
+                  color: inResultsMode && !isMatched ? "#1f2937" : "#ffffff",
+                  borderColor:
+                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
+                }}
+                className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
                 onClick={inResultsMode && isMatched ? handleDetailsClick : undefined}
                 disabled={(inResultsMode && !isMatched) || isDetailsLoading}
               >
@@ -213,16 +215,18 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                   <LoadingButton
                     isLoading={true}
                     loadingText="..."
-                    variant="outline"
-                    className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
+                    variant="default"
+                    style={{ backgroundColor: "#2563eb", color: "#ffffff", borderColor: "#2563eb" }}
+                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
                   >
                     Summary
                   </LoadingButton>
                   <LoadingButton
                     isLoading={true}
                     loadingText="..."
-                    variant="outline"
-                    className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
+                    variant="default"
+                    style={{ backgroundColor: "#2563eb", color: "#ffffff", borderColor: "#2563eb" }}
+                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
                   >
                     Details
                   </LoadingButton>
@@ -234,12 +238,13 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                   <LoadingButton
                     isLoading={false}
                     loadingText="..."
-                    variant="outline"
-                    className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                      isMatched
-                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                        : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
-                    }`}
+                    variant="default"
+                    style={{
+                      backgroundColor: isMatched ? "#2563eb" : "#9ca3af",
+                      color: isMatched ? "#ffffff" : "#1f2937",
+                      borderColor: isMatched ? "#2563eb" : "#9ca3af",
+                    }}
+                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
                     disabled={!isMatched}
                   >
                     Summary
@@ -247,12 +252,13 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                   <LoadingButton
                     isLoading={isMatched && isDetailsLoading}
                     loadingText="Loading..."
-                    variant="outline"
-                    className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                      isMatched
-                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                        : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
-                    }`}
+                    variant="default"
+                    style={{
+                      backgroundColor: isMatched ? "#2563eb" : "#9ca3af",
+                      color: isMatched ? "#ffffff" : "#1f2937",
+                      borderColor: isMatched ? "#2563eb" : "#9ca3af",
+                    }}
+                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
                     onClick={isMatched ? handleDetailsClick : undefined}
                     disabled={!isMatched || isDetailsLoading}
                   >

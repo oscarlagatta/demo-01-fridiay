@@ -27,10 +27,10 @@ export function RoleBasedFeatureDemo() {
           </div>
           {hasPerformedSearch ? (
             <div className="flex gap-2">
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
                 Summary
               </Button>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
                 Details
               </Button>
             </div>
@@ -49,19 +49,19 @@ export function RoleBasedFeatureDemo() {
         </div>
         {hasPerformedSearch ? (
           <div className="flex gap-2 flex-wrap">
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
               Summary
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
               Details
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
               Flow
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
               Trend
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
               Balanced
             </Button>
           </div>

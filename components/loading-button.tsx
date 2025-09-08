@@ -1,5 +1,6 @@
+import type React from "react"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from 'lucide-react'
+import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface LoadingButtonProps {
@@ -11,24 +12,20 @@ interface LoadingButtonProps {
   size?: "default" | "sm" | "lg" | "icon"
 }
 
-export function LoadingButton({ 
-  isLoading, 
-  loadingText = "Loading...", 
-  children, 
+export function LoadingButton({
+  isLoading,
+  loadingText = "Loading...",
+  children,
   className,
-  variant = "outline",
+  variant = "default",
   size = "default",
-  ...props 
+  ...props
 }: LoadingButtonProps) {
   return (
-    <Button 
-      variant={variant} 
+    <Button
+      variant={variant}
       size={size}
-      className={cn(
-        "transition-all duration-200",
-        isLoading && "cursor-not-allowed opacity-70",
-        className
-      )}
+      className={cn("transition-all duration-200", isLoading && "cursor-not-allowed", className)}
       disabled={isLoading}
       {...props}
     >
