@@ -5,6 +5,7 @@ import type React from "react"
 import { memo, useMemo, useState } from "react"
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react"
 import { Card, CardHeader, CardTitle, CardContent } from "./ui/card"
+import { Clock } from "lucide-react"
 import { useGetSplunk } from "../hooks/use-get-splunk"
 import { computeTrendColors, getTrendColorClass, type TrendColor } from "../lib/trend-color-utils"
 import {
@@ -23,10 +24,35 @@ type CustomNodeData = {
   isSelected?: boolean
   isConnected?: boolean
   isDimmed?: boolean
+  isHighlighted?: boolean
   onClick?: (nodeId: string) => void
+  mode?: "track-trace" | "observability"
 }
 
 type CustomNodeType = Node<CustomNodeData>
+
+const NODE_TIMING_DATA: Record<string, number> = {
+  "swift-gateway": 0.8,
+  "swift-alliance": 0.6,
+  "loan-iq": 1.2,
+  gpo: 0.4,
+  "cashpro-mobile": 0.9,
+  "cashpro-payments": 0.7,
+  "cpo-api-gateway": 1.1,
+  b2b: 0.5,
+  "frp-us": 1.3,
+  psh: 0.8,
+  rcs: 0.6,
+  rfi: 0.3,
+  mip: 0.4,
+  "grs-amer": 0.9,
+  "gcms-gumbo": 1.5,
+  "ets-cancelled": 0.7,
+  "grs-fraud": 1.8,
+  wtx: 0.6,
+  bow: 0.4,
+  btbf: 1.2,
+}
 
 const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   const { data: splunkData, isLoading, isError, isFetching } = useGetSplunk()
@@ -66,6 +92,8 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   const trendColorClass = getTrendColorClass(trendColor)
   const trafficStatusColorClass = getTrafficStatusColorClass(trafficStatusColor)
 
+  const nodeTimingMs = NODE_TIMING_DATA[id] || 0.5
+
   const handleClick = () => {
     if (data.onClick && id && !isLoading) {
       data.onClick(id)
@@ -102,7 +130,9 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
       baseClass += " bg-gray-100"
     }
 
-    if (data.isSelected && !isLoading) {
+    if (data.isHighlighted) {
+      baseClass += " ring-2 ring-blue-500 shadow-lg bg-blue-50 border-blue-400"
+    } else if (data.isSelected && !isLoading) {
       baseClass += " ring-2 ring-blue-700 shadow-lg scale-105"
     } else if (data.isConnected && !isLoading) {
       baseClass += " ring-2 ring-blue-300 shadow-lg"
@@ -140,6 +170,12 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
         <p className="text-[10px] text-muted-foreground text-center truncate" data-testid="node-subtext">
           {data.subtext}
         </p>
+        {data.mode === "observability" && (
+          <div className="flex items-center justify-center space-x-1 mt-1 px-2 py-1 bg-blue-50 rounded-md border border-blue-200">
+            <Clock className="h-3 w-3 text-blue-600" />
+            <span className="text-[10px] font-medium text-blue-700">Avg: {nodeTimingMs}s</span>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-2 pt-0">
         <div className="flex flex-wrap justify-center gap-1 transition-all duration-200">
