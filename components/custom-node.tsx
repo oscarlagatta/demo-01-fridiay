@@ -91,21 +91,21 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   // Determine styling based on selection state and loading
   const getCardClassName = () => {
     let baseClass =
-      "w-48 min-w-48 max-w-48 sm:w-52 sm:min-w-52 sm:max-w-52 md:w-56 md:min-w-56 md:max-w-56 border border-white/30 shadow-xl backdrop-blur-md cursor-pointer transition-all duration-300 rounded-xl"
+      "w-48 min-w-48 max-w-48 sm:w-52 sm:min-w-52 sm:max-w-52 md:w-56 md:min-w-56 md:max-w-56 border-2 border-[rgb(10,49,97)] shadow-md cursor-pointer transition-all duration-200"
 
-    // Loading state styling with glassmorphism
+    // Loading state styling
     if (isLoading || isFetching) {
-      baseClass += " bg-white/10 backdrop-blur-sm"
+      baseClass += " bg-gray-50"
     } else if (isError) {
-      baseClass += " bg-red-500/10 border-red-300/30 backdrop-blur-md"
+      baseClass += " bg-red-50 border-red-200"
     } else {
-      baseClass += " bg-white/15 backdrop-blur-md"
+      baseClass += " bg-gray-100"
     }
 
     if (data.isSelected && !isLoading) {
-      baseClass += " ring-2 ring-blue-400/50 shadow-2xl scale-105 bg-white/25"
+      baseClass += " ring-2 ring-blue-700 shadow-lg scale-105"
     } else if (data.isConnected && !isLoading) {
-      baseClass += " ring-2 ring-blue-300/40 shadow-xl bg-white/20"
+      baseClass += " ring-2 ring-blue-300 shadow-lg"
     } else if (data.isDimmed) {
       baseClass += " opacity-40"
     }
@@ -131,31 +131,13 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
 
   return (
     <Card className={getCardClassName()} onClick={handleClick} data-testid={`custom-node-${id}`}>
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="!bg-white/60 !backdrop-blur-sm !border !border-white/30 w-2 h-2"
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!bg-white/60 !backdrop-blur-sm !border !border-white/30 w-2 h-2"
-      />
-      <Handle
-        type="source"
-        position={Position.Top}
-        className="!bg-white/60 !backdrop-blur-sm !border !border-white/30 w-2 h-2"
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!bg-white/60 !backdrop-blur-sm !border !border-white/30 w-2 h-2"
-      />
+      <Handle type="target" position={Position.Left} className="!bg-gray-400 w-2 h-2" />
+      <Handle type="source" position={Position.Right} className="!bg-gray-400 w-2 h-2" />
+      <Handle type="source" position={Position.Top} className="!bg-gray-400 w-2 h-2" />
+      <Handle type="source" position={Position.Bottom} className="!bg-gray-400 w-2 h-2" />
       <CardHeader className="p-2">
-        <CardTitle className="text-xs font-bold whitespace-nowrap text-center truncate text-gray-800 drop-shadow-sm">
-          {data.title}
-        </CardTitle>
-        <p className="text-[10px] text-gray-600 text-center truncate drop-shadow-sm" data-testid="node-subtext">
+        <CardTitle className="text-xs font-bold whitespace-nowrap text-center truncate">{data.title}</CardTitle>
+        <p className="text-[10px] text-muted-foreground text-center truncate" data-testid="node-subtext">
           {data.subtext}
         </p>
       </CardHeader>
@@ -167,8 +149,8 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 isLoading={isFetching}
                 loadingText="..."
                 variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 backdrop-blur-sm border-white/20 ${
-                  isError ? "bg-gray-400/80" : trafficStatusColorClass
+                className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${
+                  isError ? "bg-gray-400" : trafficStatusColorClass
                 }`}
               >
                 Flow
@@ -177,7 +159,7 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 isLoading={isFetching}
                 loadingText="..."
                 variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 backdrop-blur-sm border-white/20 ${isError ? "bg-gray-400/80" : trendColorClass}`}
+                className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${isError ? "bg-gray-400" : trendColorClass}`}
               >
                 Trend
               </LoadingButton>
@@ -185,7 +167,7 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 isLoading={isFetching}
                 loadingText="..."
                 variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-white/20 backdrop-blur-sm border-white/30 text-gray-700 hover:bg-white/30 flex-1 min-w-0"
+                className="h-6 px-2 text-[10px] shadow-sm bg-transparent flex-1 min-w-0"
               >
                 Balanced
               </LoadingButton>
@@ -198,7 +180,7 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 isLoading={true}
                 loadingText="..."
                 variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600/80 backdrop-blur-sm text-white hover:bg-blue-700/80 hover:text-white border-blue-400/30 flex-1 min-w-0"
+                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
               >
                 Summary
               </LoadingButton>
@@ -206,7 +188,7 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 isLoading={true}
                 loadingText="..."
                 variant="outline"
-                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600/80 backdrop-blur-sm text-white hover:bg-blue-700/80 hover:text-white border-blue-400/30 flex-1 min-w-0"
+                className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
               >
                 Details
               </LoadingButton>
@@ -219,10 +201,10 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 isLoading={false}
                 loadingText="..."
                 variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 backdrop-blur-sm ${
+                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
                   isMatched
-                    ? "bg-blue-600/80 text-white hover:bg-blue-700/80 hover:text-white border-blue-400/30"
-                    : "bg-gray-300/60 text-gray-500 border-gray-400/30 cursor-not-allowed backdrop-blur-sm"
+                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                    : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
                 }`}
                 disabled={!isMatched}
               >
@@ -232,10 +214,10 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 isLoading={isMatched && isDetailsLoading}
                 loadingText="Loading..."
                 variant="outline"
-                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 backdrop-blur-sm ${
+                className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
                   isMatched
-                    ? "bg-blue-600/80 text-white hover:bg-blue-700/80 hover:text-white border-blue-400/30"
-                    : "bg-gray-300/60 text-gray-500 border-gray-400/30 cursor-not-allowed backdrop-blur-sm"
+                    ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                    : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
                 }`}
                 onClick={isMatched ? handleDetailsClick : undefined}
                 disabled={!isMatched || isDetailsLoading}
