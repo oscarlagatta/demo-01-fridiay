@@ -39,10 +39,48 @@ const SECTION_WIDTH_PROPORTIONS = [0.2, 0.2, 0.25, 0.35]
 const GAP_WIDTH = 16
 
 const SECTION_METRICS = {
-  "bg-origination": { name: "Origination", avgTime: 0.8, status: "healthy" },
-  "bg-validation": { name: "Payment Validation & Routing", avgTime: 1.2, status: "healthy" },
-  "bg-middleware": { name: "Middleware", avgTime: 0.9, status: "issue" },
-  "bg-processing": { name: "Payment Processing, Sanctions & Investigation", avgTime: 2.1, status: "healthy" },
+  "bg-origination": {
+    name: "Origination",
+    avgTime: 0.8,
+    status: "healthy",
+    systems: {
+      "swift-gateway": 0.3,
+      "loan-iq": 0.2,
+      "cashpro-mobile": 0.2,
+      "cpo-api-gateway": 0.1,
+    },
+  },
+  "bg-validation": {
+    name: "Payment Validation & Routing",
+    avgTime: 1.2,
+    status: "healthy",
+    systems: {
+      "swift-alliance": 0.4,
+      gpo: 0.3,
+      "cashpro-payments": 0.3,
+      "frp-us": 0.2,
+    },
+  },
+  "bg-middleware": {
+    name: "Middleware",
+    avgTime: 0.9,
+    status: "issue",
+    systems: {
+      rfi: 0.4,
+      mip: 0.5,
+    },
+  },
+  "bg-processing": {
+    name: "Payment Processing, Sanctions & Investigation",
+    avgTime: 2.1,
+    status: "healthy",
+    systems: {
+      "grs-amer": 0.8,
+      "gcms-gumbo": 0.6,
+      "ets-gumshoe": 0.4,
+      "grs-fraud": 0.3,
+    },
+  },
 }
 
 const MOCK_TRANSACTION_RESULT = {
@@ -71,6 +109,19 @@ const Flow = ({ mode }: FlowProps) => {
   const height = useStore((state) => state.height)
 
   const { data: splunkData, isLoading, isError, error, refetch, isFetching, isSuccess } = useGetSplunk()
+
+  const getNodeTimingData = useCallback((nodeId: string) => {
+    for (const [sectionId, sectionData] of Object.entries(SECTION_METRICS)) {
+      if (sectionData.systems[nodeId]) {
+        return {
+          avgTime: sectionData.systems[nodeId],
+          sectionAvg: sectionData.avgTime,
+          sectionName: sectionData.name,
+        }
+      }
+    }
+    return null
+  }, [])
 
   const handleTransactionSearch = useCallback((transactionId: string) => {
     if (transactionId.trim()) {
@@ -240,6 +291,8 @@ const Flow = ({ mode }: FlowProps) => {
       const isDimmed = selectedNodeId && !isSelected && !isConnected
       const isHighlighted = mode === "track-trace" && highlightedPath.includes(node.id)
 
+      const timingData = mode === "observability" ? getNodeTimingData(node.id) : null
+
       const nodeData = {
         ...node.data,
         isSelected,
@@ -248,6 +301,7 @@ const Flow = ({ mode }: FlowProps) => {
         isHighlighted,
         onClick: handleNodeClick,
         mode,
+        timingData,
       }
 
       if (node.parentId) {
@@ -263,7 +317,7 @@ const Flow = ({ mode }: FlowProps) => {
         data: nodeData,
       }
     })
-  }, [nodes, selectedNodeId, connectedNodeIds, handleNodeClick, mode, highlightedPath])
+  }, [nodes, selectedNodeId, connectedNodeIds, handleNodeClick, mode, highlightedPath, getNodeTimingData])
 
   const edgesForFlow = useMemo(() => {
     return edges.map((edge) => {
@@ -386,7 +440,6 @@ const Flow = ({ mode }: FlowProps) => {
 
   return (
     <div className="h-full w-full relative">
-      {/* Refresh Data Button - Icon only, docked top-right */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {lastRefetch && !isFetching && (
           <span className="text-xs text-muted-foreground">Last updated: {lastRefetch.toLocaleTimeString()}</span>
@@ -405,21 +458,24 @@ const Flow = ({ mode }: FlowProps) => {
       </div>
 
       {mode === "observability" && (
-        <div className="absolute top-4 left-4 z-10 space-y-2">
+        <div className="absolute top-4 left-4 z-10 space-y-2 max-w-xs">
           {Object.entries(SECTION_METRICS).map(([sectionId, metrics]) => (
-            <Card key={sectionId} className="w-64 shadow-sm">
+            <Card key={sectionId} className="w-72 shadow-sm bg-white/95 backdrop-blur-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  {metrics.name}
+                  <span className="truncate">{metrics.name}</span>
                   <div
-                    className={`w-3 h-3 rounded-full ${metrics.status === "healthy" ? "bg-green-500" : "bg-red-500"}`}
+                    className={`w-3 h-3 rounded-full flex-shrink-0 ${metrics.status === "healthy" ? "bg-green-500" : "bg-red-500"}`}
                   />
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">Avg: {metrics.avgTime}s</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">Section Avg: {metrics.avgTime}s</span>
+                  </div>
+                  <span className="text-xs text-gray-500">{Object.keys(metrics.systems).length} systems</span>
                 </div>
               </CardContent>
             </Card>
@@ -480,7 +536,6 @@ const Flow = ({ mode }: FlowProps) => {
         </div>
       )}
 
-      {/* Selected panel - only show in track-trace mode when not showing transaction result */}
       {mode === "track-trace" && selectedNodeId && !showTransactionResult && (
         <div className="absolute top-4 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
