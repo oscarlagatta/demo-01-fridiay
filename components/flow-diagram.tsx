@@ -16,7 +16,7 @@ import {
   useStore,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
-import { Loader2, RefreshCw, AlertCircle } from "lucide-react"
+import { Loader2, RefreshCw, AlertCircle, CheckCircle, Clock } from "lucide-react"
 
 import { useGetSplunk } from "../hooks/use-get-splunk"
 import { initialNodes, initialEdges } from "../lib/flow-data"
@@ -27,6 +27,7 @@ import { Button } from "./ui/button"
 import { Skeleton } from "./ui/skeleton"
 import { TransactionDetailsTable } from "./transaction-details-table"
 import { useTransactionSearchContext } from "./transaction-search-provider"
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -37,7 +38,25 @@ const SECTION_IDS = ["bg-origination", "bg-validation", "bg-middleware", "bg-pro
 const SECTION_WIDTH_PROPORTIONS = [0.2, 0.2, 0.25, 0.35]
 const GAP_WIDTH = 16
 
-const Flow = () => {
+const SECTION_METRICS = {
+  "bg-origination": { name: "Origination", avgTime: 0.8, status: "healthy" },
+  "bg-validation": { name: "Payment Validation & Routing", avgTime: 1.2, status: "healthy" },
+  "bg-middleware": { name: "Middleware", avgTime: 0.9, status: "issue" },
+  "bg-processing": { name: "Payment Processing, Sanctions & Investigation", avgTime: 2.1, status: "healthy" },
+}
+
+const MOCK_TRANSACTION_RESULT = {
+  transactionId: "TXN-2024-001234",
+  status: "Processed",
+  outcome: "Completed in WTX → sent to Fed",
+  path: ["swift-gateway", "swift-alliance", "gpo", "rfi", "mip", "grs-amer", "gcms-gumbo"],
+}
+
+interface FlowProps {
+  mode: "track-trace" | "observability"
+}
+
+const Flow = ({ mode }: FlowProps) => {
   const { showTableView } = useTransactionSearchContext()
   const [nodes, setNodes] = useState<Node[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
@@ -45,11 +64,32 @@ const Flow = () => {
   const [connectedNodeIds, setConnectedNodeIds] = useState<Set<string>>(new Set())
   const [connectedEdgeIds, setConnectedEdgeIds] = useState<Set<string>>(new Set())
   const [lastRefetch, setLastRefetch] = useState<Date | null>(null)
+  const [showTransactionResult, setShowTransactionResult] = useState(false)
+  const [highlightedPath, setHighlightedPath] = useState<string[]>([])
 
   const width = useStore((state) => state.width)
   const height = useStore((state) => state.height)
 
   const { data: splunkData, isLoading, isError, error, refetch, isFetching, isSuccess } = useGetSplunk()
+
+  const handleTransactionSearch = useCallback((transactionId: string) => {
+    if (transactionId.trim()) {
+      setHighlightedPath(MOCK_TRANSACTION_RESULT.path)
+      setShowTransactionResult(true)
+    } else {
+      setHighlightedPath([])
+      setShowTransactionResult(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleSearch = (event: CustomEvent) => {
+      handleTransactionSearch(event.detail.transactionId)
+    }
+
+    window.addEventListener("transactionSearch", handleSearch as EventListener)
+    return () => window.removeEventListener("transactionSearch", handleSearch as EventListener)
+  }, [handleTransactionSearch])
 
   const handleRefetch = async () => {
     try {
@@ -198,13 +238,16 @@ const Flow = () => {
       const isSelected = selectedNodeId === node.id
       const isConnected = connectedNodeIds.has(node.id)
       const isDimmed = selectedNodeId && !isSelected && !isConnected
+      const isHighlighted = mode === "track-trace" && highlightedPath.includes(node.id)
 
       const nodeData = {
         ...node.data,
         isSelected,
         isConnected,
         isDimmed,
+        isHighlighted,
         onClick: handleNodeClick,
+        mode,
       }
 
       if (node.parentId) {
@@ -220,25 +263,27 @@ const Flow = () => {
         data: nodeData,
       }
     })
-  }, [nodes, selectedNodeId, connectedNodeIds, handleNodeClick])
+  }, [nodes, selectedNodeId, connectedNodeIds, handleNodeClick, mode, highlightedPath])
 
   const edgesForFlow = useMemo(() => {
     return edges.map((edge) => {
       const isConnected = connectedEdgeIds.has(edge.id)
       const isDimmed = selectedNodeId && !isConnected
+      const isHighlighted =
+        mode === "track-trace" && highlightedPath.includes(edge.source) && highlightedPath.includes(edge.target)
 
       return {
         ...edge,
         style: {
           ...edge.style,
-          strokeWidth: isConnected ? 3 : 2,
-          stroke: isConnected ? "#1d4ed8" : isDimmed ? "#d1d5db" : "#6b7280",
+          strokeWidth: isConnected || isHighlighted ? 3 : 2,
+          stroke: isHighlighted ? "#3b82f6" : isConnected ? "#1d4ed8" : isDimmed ? "#d1d5db" : "#6b7280",
           opacity: isDimmed ? 0.3 : 1,
         },
-        animated: isConnected,
+        animated: isConnected || isHighlighted,
       }
     })
-  }, [edges, connectedEdgeIds, selectedNodeId])
+  }, [edges, connectedEdgeIds, selectedNodeId, mode, highlightedPath])
 
   const renderDataPanel = () => {
     if (isLoading) {
@@ -359,6 +404,29 @@ const Flow = () => {
         </Button>
       </div>
 
+      {mode === "observability" && (
+        <div className="absolute top-4 left-4 z-10 space-y-2">
+          {Object.entries(SECTION_METRICS).map(([sectionId, metrics]) => (
+            <Card key={sectionId} className="w-64 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center justify-between">
+                  {metrics.name}
+                  <div
+                    className={`w-3 h-3 rounded-full ${metrics.status === "healthy" ? "bg-green-500" : "bg-red-500"}`}
+                  />
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">Avg: {metrics.avgTime}s</span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
       <ReactFlow
         nodes={nodesForFlow}
         edges={edgesForFlow}
@@ -378,8 +446,42 @@ const Flow = () => {
         <Background gap={16} size={1} />
       </ReactFlow>
 
-      {/* Selected panel */}
-      {selectedNodeId && (
+      {mode === "track-trace" && showTransactionResult && (
+        <div className="absolute bottom-4 left-4 z-10 max-w-md bg-white border rounded-lg shadow-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-800">Transaction Result</h3>
+            <button
+              onClick={() => {
+                setShowTransactionResult(false)
+                setHighlightedPath([])
+              }}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              ×
+            </button>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-600">Transaction ID:</span>
+              <span className="text-xs text-gray-900">{MOCK_TRANSACTION_RESULT.transactionId}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-600">Status:</span>
+              <div className="flex items-center space-x-1">
+                <CheckCircle className="h-3 w-3 text-green-500" />
+                <span className="text-xs text-green-600">{MOCK_TRANSACTION_RESULT.status}</span>
+              </div>
+            </div>
+            <div className="mt-2">
+              <span className="text-xs font-medium text-gray-600">Outcome:</span>
+              <p className="text-xs text-gray-700 mt-1">{MOCK_TRANSACTION_RESULT.outcome}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selected panel - only show in track-trace mode when not showing transaction result */}
+      {mode === "track-trace" && selectedNodeId && !showTransactionResult && (
         <div className="absolute top-4 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
             Selected System: {nodes.find((n) => n.id === selectedNodeId)?.data?.title}
@@ -409,11 +511,10 @@ const Flow = () => {
   )
 }
 
-export function FlowDiagram() {
-  // Use the top-level QueryProvider; only keep ReactFlowProvider here
+export function FlowDiagram({ mode = "track-trace" }: { mode?: "track-trace" | "observability" }) {
   return (
     <ReactFlowProvider>
-      <Flow />
+      <Flow mode={mode} />
     </ReactFlowProvider>
   )
 }

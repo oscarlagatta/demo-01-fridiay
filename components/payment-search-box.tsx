@@ -61,6 +61,11 @@ function PaymentSearchBox() {
   const handleSearch = async () => {
     if (!hasValidSearch) return
 
+    const event = new CustomEvent("transactionSearch", {
+      detail: { transactionId: searchCriteria.transactionId.trim() },
+    })
+    window.dispatchEvent(event)
+
     searchByAll({
       transactionId: searchCriteria.transactionId.trim() || undefined,
       transactionAmount: searchCriteria.transactionAmount.trim() || undefined,
@@ -77,6 +82,11 @@ function PaymentSearchBox() {
       dateStart: "",
       dateEnd: "",
     })
+
+    const event = new CustomEvent("transactionSearch", {
+      detail: { transactionId: "" },
+    })
+    window.dispatchEvent(event)
 
     // Exit transaction search mode so nodes show Flow/Trend/Balanced again
     clearTx()
