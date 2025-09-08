@@ -274,10 +274,18 @@ const Flow = () => {
             <div className="space-y-2">
               <h4 className="text-xs font-medium text-gray-600 mb-1">Available Actions:</h4>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+                >
                   Summary
                 </Button>
-                <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+                >
                   Details
                 </Button>
               </div>
@@ -371,19 +379,39 @@ const Flow = () => {
           <div className="space-y-2">
             <h4 className="text-xs font-medium text-gray-600 mb-1">Available Actions:</h4>
             <div className="flex gap-2 flex-wrap">
-              <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+              >
                 Summary
               </Button>
-              <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+              >
                 Details
               </Button>
-              <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+              >
                 Flow
               </Button>
-              <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+              >
                 Trend
               </Button>
-              <Button size="sm" variant="outline" className="bg-white text-gray-900 border-gray-300 hover:bg-gray-50">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700 hover:text-white"
+              >
                 Balanced
               </Button>
             </div>

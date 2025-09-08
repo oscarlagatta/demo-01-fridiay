@@ -13,6 +13,7 @@ import {
   type TrafficStatusColor,
 } from "../lib/traffic-status-utils"
 import { LoadingButton } from "./loading-button"
+import { HighContrastButton } from "./high-contrast-button"
 import { CardLoadingSkeleton } from "./loading-skeleton"
 import { useTransactionSearchContext } from "./transaction-search-provider"
 import { useAuthzRules } from "../hooks/use-authz-rules"
@@ -143,39 +144,31 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
         <div className="flex flex-wrap justify-center gap-1 transition-all duration-200">
           {!isAuthorized ? (
             <>
-              <LoadingButton
+              <HighContrastButton
+                variant={inLoadingMode ? "loading" : inResultsMode && !isMatched ? "disabled" : "enabled"}
                 isLoading={inLoadingMode}
                 loadingText="..."
-                variant="default"
-                style={{
-                  backgroundColor:
-                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
-                  color: inResultsMode && !isMatched ? "#1f2937" : "#ffffff",
-                  borderColor:
-                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
-                }}
-                className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
+                className="h-6 px-2 shadow-sm flex-1 min-w-0"
                 disabled={inResultsMode && !isMatched}
               >
                 Summary
-              </LoadingButton>
-              <LoadingButton
+              </HighContrastButton>
+              <HighContrastButton
+                variant={
+                  inResultsMode && isMatched && isDetailsLoading
+                    ? "loading"
+                    : inResultsMode && !isMatched
+                      ? "disabled"
+                      : "enabled"
+                }
                 isLoading={inResultsMode && isMatched && isDetailsLoading}
                 loadingText="Loading..."
-                variant="default"
-                style={{
-                  backgroundColor:
-                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
-                  color: inResultsMode && !isMatched ? "#1f2937" : "#ffffff",
-                  borderColor:
-                    inResultsMode && isMatched ? "#2563eb" : inResultsMode && !isMatched ? "#9ca3af" : "#2563eb",
-                }}
-                className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
+                className="h-6 px-2 shadow-sm flex-1 min-w-0"
                 onClick={inResultsMode && isMatched ? handleDetailsClick : undefined}
                 disabled={(inResultsMode && !isMatched) || isDetailsLoading}
               >
                 Details
-              </LoadingButton>
+              </HighContrastButton>
             </>
           ) : (
             <>
@@ -212,58 +205,44 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
 
               {inLoadingMode && (
                 <>
-                  <LoadingButton
+                  <HighContrastButton
+                    variant="loading"
                     isLoading={true}
                     loadingText="..."
-                    variant="default"
-                    style={{ backgroundColor: "#2563eb", color: "#ffffff", borderColor: "#2563eb" }}
-                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
+                    className="h-6 px-2 shadow-sm flex-1 min-w-0"
                   >
                     Summary
-                  </LoadingButton>
-                  <LoadingButton
+                  </HighContrastButton>
+                  <HighContrastButton
+                    variant="loading"
                     isLoading={true}
                     loadingText="..."
-                    variant="default"
-                    style={{ backgroundColor: "#2563eb", color: "#ffffff", borderColor: "#2563eb" }}
-                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
+                    className="h-6 px-2 shadow-sm flex-1 min-w-0"
                   >
                     Details
-                  </LoadingButton>
+                  </HighContrastButton>
                 </>
               )}
 
               {inResultsMode && (
                 <>
-                  <LoadingButton
-                    isLoading={false}
-                    loadingText="..."
-                    variant="default"
-                    style={{
-                      backgroundColor: isMatched ? "#2563eb" : "#9ca3af",
-                      color: isMatched ? "#ffffff" : "#1f2937",
-                      borderColor: isMatched ? "#2563eb" : "#9ca3af",
-                    }}
-                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
+                  <HighContrastButton
+                    variant={isMatched ? "enabled" : "disabled"}
+                    className="h-6 px-2 shadow-sm flex-1 min-w-0"
                     disabled={!isMatched}
                   >
                     Summary
-                  </LoadingButton>
-                  <LoadingButton
+                  </HighContrastButton>
+                  <HighContrastButton
+                    variant={isMatched && isDetailsLoading ? "loading" : isMatched ? "enabled" : "disabled"}
                     isLoading={isMatched && isDetailsLoading}
                     loadingText="Loading..."
-                    variant="default"
-                    style={{
-                      backgroundColor: isMatched ? "#2563eb" : "#9ca3af",
-                      color: isMatched ? "#ffffff" : "#1f2937",
-                      borderColor: isMatched ? "#2563eb" : "#9ca3af",
-                    }}
-                    className="h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 !important"
+                    className="h-6 px-2 shadow-sm flex-1 min-w-0"
                     onClick={isMatched ? handleDetailsClick : undefined}
                     disabled={!isMatched || isDetailsLoading}
                   >
                     Details
-                  </LoadingButton>
+                  </HighContrastButton>
                 </>
               )}
             </>

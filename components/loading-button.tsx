@@ -8,8 +8,9 @@ interface LoadingButtonProps {
   loadingText?: string
   children: React.ReactNode
   className?: string
-  variant?: "outline" | "default" | "destructive" | "secondary" | "ghost" | "link"
+  variant?: "outline" | "default" | "destructive" | "secondary" | "ghost" | "link" | "solid"
   size?: "default" | "sm" | "lg" | "icon"
+  style?: React.CSSProperties
 }
 
 export function LoadingButton({
@@ -19,13 +20,20 @@ export function LoadingButton({
   className,
   variant = "default",
   size = "default",
+  style,
   ...props
 }: LoadingButtonProps) {
   return (
     <Button
       variant={variant}
       size={size}
-      className={cn("transition-all duration-200", isLoading && "cursor-not-allowed", className)}
+      style={style}
+      className={cn(
+        "transition-all duration-200",
+        isLoading && "cursor-not-allowed",
+        style && "!opacity-100",
+        className,
+      )}
       disabled={isLoading}
       {...props}
     >

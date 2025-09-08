@@ -210,7 +210,7 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 className={`node-button h-7 px-3 text-xs font-medium shadow-md flex-1 min-w-0 border-0 ${
                   isMatched
                     ? "bg-gradient-to-r from-primary to-accent text-white hover:from-primary/90 hover:to-accent/90"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-600 text-white cursor-not-allowed"
                 }`}
                 disabled={!isMatched}
               >
@@ -223,7 +223,7 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
                 className={`node-button h-7 px-3 text-xs font-medium shadow-md flex-1 min-w-0 border-0 ${
                   isMatched
                     ? "bg-gradient-to-r from-primary to-accent text-white hover:from-primary/90 hover:to-accent/90"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-600 text-white cursor-not-allowed"
                 }`}
                 onClick={isMatched ? handleDetailsClick : undefined}
                 disabled={!isMatched || isDetailsLoading}
