@@ -1,80 +1,72 @@
 import { type Node, type Edge, MarkerType } from "@xyflow/react"
 import apiData from "./api-data.json"
+import type { SectionTiming } from "@/hooks/use-section-timing"
 
 // Define a custom type for our application's node data, which uses parentId
 export type AppNode = Omit<Node, "parentNode"> & {
   parentId?: string
 }
 
-// --- Static Section Definitions ---
-const backgroundNodes: AppNode[] = [
-  {
-    id: "bg-origination",
-    type: "background",
-    position: { x: 0, y: 0 },
-    data: {
+export function createBackgroundNodes(sectionTimings?: SectionTiming[]): AppNode[] {
+  // Default static data as fallback
+  const defaultSections = [
+    {
+      id: "bg-origination",
       title: "Origination",
-      averageTime: "3 seconds",
-      status: "good",
+      averageTime: 3,
+      status: "good" as const,
     },
-    draggable: false,
-    selectable: false,
-    zIndex: -1,
-    style: { width: "350px", height: "960px" },
-  },
-  {
-    id: "bg-validation",
-    type: "background",
-    position: { x: 350, y: 0 },
-    data: {
+    {
+      id: "bg-validation",
       title: "Payment Validation and Routing",
-      averageTime: "3 seconds",
-      status: "good",
+      averageTime: 3,
+      status: "good" as const,
     },
-    draggable: false,
-    selectable: false,
-    zIndex: -1,
-    style: { width: "350px", height: "960px" },
-  },
-  {
-    id: "bg-middleware",
-    type: "background",
-    position: { x: 700, y: 0 },
-    data: {
+    {
+      id: "bg-middleware",
       title: "Middleware",
-      averageTime: "30 hours",
-      status: "critical",
+      averageTime: 30,
+      status: "critical" as const,
+      unit: "hours" as const,
     },
-    draggable: false,
-    selectable: false,
-    zIndex: -1,
-    style: { width: "450px", height: "960px" },
-  },
-  {
-    id: "bg-processing",
-    type: "background",
-    position: { x: 1150, y: 0 },
-    data: {
+    {
+      id: "bg-processing",
       title: "Payment Processing, Sanctions & Investigation",
-      averageTime: "200 seconds",
-      status: "warning",
+      averageTime: 200,
+      status: "warning" as const,
     },
-    draggable: false,
-    selectable: false,
-    zIndex: -1,
-    style: { width: "500px", height: "960px" },
-  },
-]
+  ]
 
-// --- Data Transformation Logic ---
+  const sections = sectionTimings || defaultSections
 
-const classToParentId: Record<string, string> = {
-  origination: "bg-origination",
-  "payment validation and routing": "bg-validation",
-  middleware: "bg-middleware",
-  "payment processing, sanctions and investigation": "bg-processing",
+  return sections.map((section, index) => {
+    const positions = [
+      { x: 0, width: 350 },
+      { x: 350, width: 350 },
+      { x: 700, width: 450 },
+      { x: 1150, width: 500 },
+    ]
+
+    const pos = positions[index] || positions[0]
+
+    return {
+      id: section.id,
+      type: "background",
+      position: { x: pos.x, y: 0 },
+      data: {
+        title: section.title,
+        averageTime: `${section.averageTime} ${section.unit || "seconds"}`,
+        status: section.status,
+      },
+      draggable: false,
+      selectable: false,
+      zIndex: -1,
+      style: { width: `${pos.width}px`, height: "960px" },
+    }
+  })
 }
 
+// --- Static Section Definitions ---
 const sectionPositions: Record<string, { baseX: number; positions: { x: number; y: number }[] }> = {
   "bg-origination": {
     baseX: 50,
@@ -119,7 +111,9 @@ const sectionPositions: Record<string, { baseX: number; positions: { x: number; 
   },
 }
 
-function transformApiData() {
+export function transformApiData(sectionTimings?: SectionTiming[]) {
+  const backgroundNodes = createBackgroundNodes(sectionTimings)
+
   const sectionCounters: Record<string, number> = {
     "bg-origination": 0,
     "bg-validation": 0,
@@ -129,7 +123,7 @@ function transformApiData() {
 
   const transformedNodes: AppNode[] = apiData.nodes
     .map((apiNode): AppNode | null => {
-      const parentId = classToParentId[apiNode.class]
+      const parentId = sectionPositions[apiNode.class]?.id
       if (!parentId) return null
 
       const sectionConfig = sectionPositions[parentId]
@@ -187,7 +181,11 @@ function transformApiData() {
   }
 }
 
-const { nodes, edges } = transformApiData()
+export function getFlowData(sectionTimings?: SectionTiming[]) {
+  return transformApiData(sectionTimings)
+}
 
+// Keep legacy exports for backward compatibility
+const { nodes, edges } = transformApiData()
 export const initialNodes: AppNode[] = nodes
 export const initialEdges: Edge[] = edges

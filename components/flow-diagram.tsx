@@ -19,7 +19,8 @@ import "@xyflow/react/dist/style.css"
 import { Loader2, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
 
 import { useGetSplunk } from "../hooks/use-get-splunk"
-import { initialNodes, initialEdges } from "../lib/flow-data"
+import { getFlowData } from "../lib/flow-data"
+import { useSectionTiming } from "../hooks/use-section-timing"
 import CustomNode from "./custom-node"
 import SectionBackgroundNode from "./section-background-node"
 import { computeTrafficStatusColors } from "../lib/traffic-status-utils"
@@ -39,8 +40,21 @@ const GAP_WIDTH = 16
 
 const Flow = () => {
   const { showTableView } = useTransactionSearchContext()
-  const [nodes, setNodes] = useState<Node[]>(initialNodes)
-  const [edges, setEdges] = useState<Edge[]>(initialEdges)
+  const { data: timingData, isLoading: isTimingLoading, error: timingError } = useSectionTiming()
+
+  const { nodes: dynamicNodes, edges: dynamicEdges } = useMemo(() => {
+    return getFlowData(timingData?.sections)
+  }, [timingData])
+
+  const [nodes, setNodes] = useState<Node[]>(dynamicNodes)
+  const [edges, setEdges] = useState<Edge[]>(dynamicEdges)
+
+  useEffect(() => {
+    const { nodes: newNodes, edges: newEdges } = getFlowData(timingData?.sections)
+    setNodes(newNodes)
+    setEdges(newEdges)
+  }, [timingData])
+
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [connectedNodeIds, setConnectedNodeIds] = useState<Set<string>>(new Set())
   const [connectedEdgeIds, setConnectedEdgeIds] = useState<Set<string>>(new Set())
@@ -148,8 +162,8 @@ const Flow = () => {
           if (node.parentId && sectionDimensions[node.parentId]) {
             const parentDimensions = sectionDimensions[node.parentId]
 
-            const originalNode = initialNodes.find((n) => n.id === node.id)
-            const originalParent = initialNodes.find((n) => n.id === node.parentId)
+            const originalNode = dynamicNodes.find((n) => n.id === node.id)
+            const originalParent = dynamicNodes.find((n) => n.id === node.parentId)
 
             if (originalNode && originalParent && originalParent.style?.width) {
               const originalParentWidth = Number.parseFloat(originalParent.style.width as string)
@@ -171,7 +185,7 @@ const Flow = () => {
         return newNodes
       })
     }
-  }, [width, height])
+  }, [width, height, dynamicNodes])
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes])
 
@@ -242,12 +256,14 @@ const Flow = () => {
   }, [edges, connectedEdgeIds, selectedNodeId])
 
   const renderDataPanel = () => {
-    if (isLoading) {
+    if (isLoading || isTimingLoading) {
       return (
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-            <span className="text-sm font-medium text-blue-600">Loading Splunk data...</span>
+            <span className="text-sm font-medium text-blue-600">
+              {isTimingLoading ? "Loading timing data..." : "Loading Splunk data..."}
+            </span>
           </div>
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
@@ -259,14 +275,14 @@ const Flow = () => {
       )
     }
 
-    if (isError) {
+    if (isError || timingError) {
       return (
         <div className="space-y-3">
           <div className="flex items-center space-x-2 text-red-600">
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm font-medium">Error loading data</span>
           </div>
-          <p className="text-sm text-red-500">{error?.message || "Failed to load Splunk data"}</p>
+          <p className="text-sm text-red-500">{timingError?.message || error?.message || "Failed to load data"}</p>
           <Button
             onClick={handleRefetch}
             size="sm"
@@ -309,6 +325,33 @@ const Flow = () => {
               </Button>
             </div>
           </div>
+
+          {timingData && (
+            <div className="text-xs bg-blue-50 p-2 rounded mb-2">
+              <h5 className="font-medium mb-1">Section Performance:</h5>
+              {timingData.sections.map((section) => (
+                <div key={section.id} className="flex justify-between items-center">
+                  <span className="truncate">{section.title}:</span>
+                  <span
+                    className={`px-1 rounded text-white text-xs ${
+                      section.status === "good"
+                        ? "bg-green-500"
+                        : section.status === "warning"
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
+                    }`}
+                  >
+                    {section.averageTime}
+                    {section.unit === "hours" ? "h" : "s"}
+                  </span>
+                </div>
+              ))}
+              <div className="mt-1 pt-1 border-t border-blue-200 font-medium">
+                Total: {timingData.totalAverageTime}s
+              </div>
+            </div>
+          )}
+
           <div className="text-xs bg-gray-50 p-2 rounded">
             {Object.entries(computeTrafficStatusColors(splunkData)).map(([aitNum, color]) => (
               <div key={aitNum} className="flex justify-between">
@@ -342,7 +385,6 @@ const Flow = () => {
 
   return (
     <div className="h-full w-full relative">
-      {/* Collapsible Legend in top-left corner */}
       <div className="absolute top-4 left-4 z-20 bg-white border rounded-lg shadow-lg p-3 min-w-[200px]">
         <div
           className="flex items-center justify-between cursor-pointer"
@@ -370,7 +412,6 @@ const Flow = () => {
         )}
       </div>
 
-      {/* Refresh Data Button - Icon only, docked top-right */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {lastRefetch && !isFetching && (
           <span className="text-xs text-muted-foreground">Last updated: {lastRefetch.toLocaleTimeString()}</span>
@@ -407,7 +448,6 @@ const Flow = () => {
         <Background gap={16} size={1} />
       </ReactFlow>
 
-      {/* Selected panel */}
       {selectedNodeId && (
         <div className="absolute top-20 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
@@ -439,7 +479,6 @@ const Flow = () => {
 }
 
 export function FlowDiagram() {
-  // Use the top-level QueryProvider; only keep ReactFlowProvider here
   return (
     <ReactFlowProvider>
       <Flow />

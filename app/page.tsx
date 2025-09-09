@@ -6,10 +6,12 @@ import { TransactionSearchProvider } from "../components/transaction-search-prov
 import { SearchTestingPanel } from "../components/search-testing-panel"
 import { PaymentFlowLayout } from "../components/payment-flow-sidebar"
 import { InfoSection } from "../components/info-section"
+import { useSectionTiming } from "../hooks/use-section-timing"
 import { useState } from "react"
 
 export default function HomePage() {
   const [showTesting, setShowTesting] = useState(false)
+  const { data: timingData } = useSectionTiming()
 
   return (
     <TransactionSearchProvider>
@@ -47,7 +49,7 @@ export default function HomePage() {
 
             {/* Information section with enhanced timing display */}
             <div className="mb-6">
-              <InfoSection time={30} />
+              <InfoSection time={timingData?.totalAverageTime || 0} />
             </div>
 
             {showTesting && (
