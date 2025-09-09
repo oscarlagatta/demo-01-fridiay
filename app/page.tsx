@@ -45,9 +45,9 @@ export default function HomePage() {
               <PaymentSearchBox />
             </div>
 
-            {/* Information section with toggle buttons */}
+            {/* Information section with enhanced timing display */}
             <div className="mb-6">
-              <InfoSection time={10} />
+              <InfoSection time={30} />
             </div>
 
             {showTesting && (
