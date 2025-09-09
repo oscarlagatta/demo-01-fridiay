@@ -16,7 +16,7 @@ import {
   useStore,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
-import { Loader2, RefreshCw, AlertCircle } from "lucide-react"
+import { Loader2, RefreshCw, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
 
 import { useGetSplunk } from "../hooks/use-get-splunk"
 import { initialNodes, initialEdges } from "../lib/flow-data"
@@ -45,6 +45,7 @@ const Flow = () => {
   const [connectedNodeIds, setConnectedNodeIds] = useState<Set<string>>(new Set())
   const [connectedEdgeIds, setConnectedEdgeIds] = useState<Set<string>>(new Set())
   const [lastRefetch, setLastRefetch] = useState<Date | null>(null)
+  const [isLegendCollapsed, setIsLegendCollapsed] = useState(false)
 
   const width = useStore((state) => state.width)
   const height = useStore((state) => state.height)
@@ -341,6 +342,34 @@ const Flow = () => {
 
   return (
     <div className="h-full w-full relative">
+      {/* Collapsible Legend in top-left corner */}
+      <div className="absolute top-4 left-4 z-20 bg-white border rounded-lg shadow-lg p-3 min-w-[200px]">
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => setIsLegendCollapsed(!isLegendCollapsed)}
+        >
+          <h3 className="text-sm font-semibold text-gray-800">Legend</h3>
+          {isLegendCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+        </div>
+
+        {!isLegendCollapsed && (
+          <div className="mt-2 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-green-500 border border-white shadow-sm" />
+              <span className="text-xs text-gray-700">Flow</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-yellow-500 border border-white shadow-sm" />
+              <span className="text-xs text-gray-700">Trend</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500 border border-white shadow-sm" />
+              <span className="text-xs text-gray-700">Balanced</span>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Refresh Data Button - Icon only, docked top-right */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {lastRefetch && !isFetching && (
@@ -380,7 +409,7 @@ const Flow = () => {
 
       {/* Selected panel */}
       {selectedNodeId && (
-        <div className="absolute top-4 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
+        <div className="absolute top-20 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
             Selected System: {nodes.find((n) => n.id === selectedNodeId)?.data?.title}
           </h3>

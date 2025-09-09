@@ -5,6 +5,7 @@ import PaymentSearchBox from "../components/payment-search-box"
 import { TransactionSearchProvider } from "../components/transaction-search-provider"
 import { SearchTestingPanel } from "../components/search-testing-panel"
 import { PaymentFlowLayout } from "../components/payment-flow-sidebar"
+import { InfoSection } from "../components/info-section"
 import { useState } from "react"
 
 export default function HomePage() {
@@ -42,6 +43,11 @@ export default function HomePage() {
             {/* Header section with search */}
             <div className="mb-6">
               <PaymentSearchBox />
+            </div>
+
+            {/* Information section with toggle buttons */}
+            <div className="mb-6">
+              <InfoSection />
             </div>
 
             {showTesting && (
