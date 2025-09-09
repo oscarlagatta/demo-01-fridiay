@@ -28,6 +28,8 @@ function PaymentSearchBox() {
     dateEnd: "",
   })
 
+  const [activeMode, setActiveMode] = useState<"track" | "observability">("track")
+
   const queryClient = useQueryClient()
   const { searchByAll, clear: clearTx, isFetching: txFetching } = useTransactionSearchContext()
 
@@ -92,7 +94,35 @@ function PaymentSearchBox() {
     <div className="p-4 sm:p-6 lg:p-8">
       <Card>
         <CardHeader>
-          <CardTitle>Search for a transaction</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Search for a transaction</span>
+            <div className="flex border border-gray-300 rounded-md overflow-hidden">
+              <Button
+                variant={activeMode === "track" ? "default" : "ghost"}
+                size="sm"
+                className={`rounded-none px-3 py-1 text-xs ${
+                  activeMode === "track"
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+                onClick={() => setActiveMode("track")}
+              >
+                Track and Trace
+              </Button>
+              <Button
+                variant={activeMode === "observability" ? "default" : "ghost"}
+                size="sm"
+                className={`rounded-none px-3 py-1 text-xs border-l ${
+                  activeMode === "observability"
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+                onClick={() => setActiveMode("observability")}
+              >
+                Observability
+              </Button>
+            </div>
+          </CardTitle>
           <CardDescription>You can search for a transaction by ID, Amount, or Date Range.</CardDescription>
         </CardHeader>
         <CardContent>

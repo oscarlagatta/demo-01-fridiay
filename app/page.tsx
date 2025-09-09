@@ -47,7 +47,7 @@ export default function HomePage() {
 
             {/* Information section with toggle buttons */}
             <div className="mb-6">
-              <InfoSection />
+              <InfoSection time={10} />
             </div>
 
             {showTesting && (
