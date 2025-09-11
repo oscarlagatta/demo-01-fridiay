@@ -11,7 +11,6 @@ import {
   CreditCard,
   Building,
   Globe,
-  Home,
   BarChart3,
   Users,
   FileText,
@@ -30,7 +29,6 @@ import { TransactionSearchProvider } from "@/components/transaction-search-provi
 import { USWiresToggleContent } from "@/components/us-wires-toggle-content"
 
 const mainPageItems = [
-  { id: "home-dashboard", title: "Home Dashboard", subtitle: "Overview and analytics", Icon: Home },
   { id: "analytics", title: "Analytics", subtitle: "Payment insights and reports", Icon: BarChart3 },
   { id: "user-management", title: "User Management", subtitle: "Manage system users", Icon: Users },
   { id: "reports", title: "Reports", subtitle: "Generate and view reports", Icon: FileText },
@@ -86,7 +84,7 @@ function SecondarySideBar({
       )}
     >
       {/* Header */}
-      <div className="border-b border-border p-4">
+      <div className="border-b border-border p-4" data-tour="sidebar-navigation">
         <div className="flex items-center justify-between">
           {!isCollapsed && <h2 className="text-lg font-semibold text-foreground">Navigation</h2>}
           <Button
@@ -132,7 +130,7 @@ function SecondarySideBar({
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">FLOW DIAGRAMS</h3>
 
-              <div className="bg-gray-50 rounded-lg p-3 border">
+              <div className="bg-gray-50 rounded-lg p-3 border" data-tour="view-mode-toggle">
                 <div className="text-xs font-medium text-gray-700 mb-2">View Mode</div>
                 <div className="flex items-center bg-white rounded-md p-0.5 border shadow-sm">
                   <button
@@ -163,7 +161,7 @@ function SecondarySideBar({
               </div>
             </div>
           )}
-          <nav className="space-y-1 mt-3">
+          <nav className="space-y-1 mt-3" data-tour="flow-diagrams">
             {paymentFlowItems.map((item) => {
               return (
                 <button
@@ -259,13 +257,6 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
           <USWiresToggleContent mode={usWiresMode} onModeChange={setUSWiresMode}>
             {children}
           </USWiresToggleContent>
-        )
-      case "home-dashboard":
-        return (
-          <div className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Home Dashboard</h1>
-            <p className="text-muted-foreground">Overview and analytics dashboard coming soon.</p>
-          </div>
         )
       case "analytics":
         return (

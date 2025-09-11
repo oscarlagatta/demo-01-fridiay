@@ -201,3 +201,38 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
+
+/* React Joyride custom styles */
+.__floater__open {
+  filter: none !important;
+}
+
+.react-joyride__tooltip {
+  font-family: inherit;
+}
+
+.react-joyride__beacon {
+  animation: joyride-beacon 1.5s ease-in-out infinite;
+}
+
+@keyframes joyride-beacon {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Tour spotlight effect */
+.react-joyride__spotlight {
+  border-radius: 8px;
+}
+
+/* Tour overlay */
+.react-joyride__overlay {
+  mix-blend-mode: hard-light;
+}
