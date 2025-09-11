@@ -109,7 +109,7 @@ export function IncidentSheet({ isOpen, onClose, nodeTitle, aitId }: IncidentShe
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-[400px] sm:w-[540px]">
+      <SheetContent side="right" className="w-[500px] sm:w-[700px] max-w-[800px] sm:max-w-[900px]">
         <SheetHeader>
           <SheetTitle>Create Incident Ticket</SheetTitle>
           <SheetDescription>

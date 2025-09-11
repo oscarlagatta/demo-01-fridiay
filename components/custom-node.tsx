@@ -15,7 +15,9 @@ import {
 import { LoadingButton } from "./loading-button"
 import { CardLoadingSkeleton } from "./loading-skeleton"
 import { useTransactionSearchContext } from "./transaction-search-provider"
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "./ui/context-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
+import { Button } from "./ui/button"
+import { MoreVertical } from "lucide-react"
 import { IncidentSheet } from "./incident-sheet"
 
 type CustomNodeData = {
@@ -124,118 +126,133 @@ const CustomNode = ({ data, id }: NodeProps<CustomNodeType>) => {
   const isMatched = !!aitNum && matchedAitIds.has(aitNum)
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <Card className={getCardClassName()} onClick={handleClick} data-testid={`custom-node-${id}`}>
-          <Handle type="target" position={Position.Left} className="!bg-gray-400 w-2 h-2" />
-          <Handle type="source" position={Position.Right} className="!bg-gray-400 w-2 h-2" />
-          <Handle type="source" position={Position.Top} className="!bg-gray-400 w-2 h-2" />
-          <Handle type="source" position={Position.Bottom} className="!bg-gray-400 w-2 h-2" />
-          <CardHeader className="p-2">
-            <CardTitle className="text-xs font-bold whitespace-nowrap text-center truncate">{data.title}</CardTitle>
-            <p className="text-[10px] text-muted-foreground text-center truncate" data-testid="node-subtext">
-              {data.subtext}
-            </p>
-          </CardHeader>
-          <CardContent className="p-2 pt-0">
-            <div className="flex flex-wrap justify-center gap-1 transition-all duration-200">
-              {inDefaultMode && (
-                <>
-                  <LoadingButton
-                    isLoading={isFetching}
-                    loadingText="..."
-                    variant="outline"
-                    className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${
-                      isError ? "bg-gray-400" : trafficStatusColorClass
-                    }`}
-                  >
-                    Flow
-                  </LoadingButton>
-                  <LoadingButton
-                    isLoading={isFetching}
-                    loadingText="..."
-                    variant="outline"
-                    className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${isError ? "bg-gray-400" : trendColorClass}`}
-                  >
-                    Trend
-                  </LoadingButton>
-                  <LoadingButton
-                    isLoading={isFetching}
-                    loadingText="..."
-                    variant="outline"
-                    className="h-6 px-2 text-[10px] shadow-sm bg-transparent flex-1 min-w-0"
-                  >
-                    Balanced
-                  </LoadingButton>
-                </>
-              )}
+    <>
+      <Card className={getCardClassName()} onClick={handleClick} data-testid={`custom-node-${id}`}>
+        <Handle type="target" position={Position.Left} className="!bg-gray-400 w-2 h-2" />
+        <Handle type="source" position={Position.Right} className="!bg-gray-400 w-2 h-2" />
+        <Handle type="source" position={Position.Top} className="!bg-gray-400 w-2 h-2" />
+        <Handle type="source" position={Position.Bottom} className="!bg-gray-400 w-2 h-2" />
 
-              {inLoadingMode && (
-                <>
-                  <LoadingButton
-                    isLoading={true}
-                    loadingText="..."
-                    variant="outline"
-                    className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
-                  >
-                    Summary
-                  </LoadingButton>
-                  <LoadingButton
-                    isLoading={true}
-                    loadingText="..."
-                    variant="outline"
-                    className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
-                  >
-                    Details
-                  </LoadingButton>
-                </>
-              )}
+        <div className="absolute top-1 right-1 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 hover:bg-gray-200/80 rounded-full"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-3 w-3 text-gray-600" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={handleCreateIncident}>Create Incident Ticket</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-              {inResultsMode && (
-                <>
-                  <LoadingButton
-                    isLoading={false}
-                    loadingText="..."
-                    variant="outline"
-                    className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                      isMatched
-                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                        : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
-                    }`}
-                    disabled={!isMatched}
-                  >
-                    Summary
-                  </LoadingButton>
-                  <LoadingButton
-                    isLoading={isMatched && isDetailsLoading}
-                    loadingText="Loading..."
-                    variant="outline"
-                    className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
-                      isMatched
-                        ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
-                        : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
-                    }`}
-                    onClick={isMatched ? handleDetailsClick : undefined}
-                    disabled={!isMatched || isDetailsLoading}
-                  >
-                    Details
-                  </LoadingButton>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuItem onClick={handleCreateIncident}>Create Incident Ticket</ContextMenuItem>
-      </ContextMenuContent>
+        <CardHeader className="p-2">
+          <CardTitle className="text-xs font-bold whitespace-nowrap text-center truncate">{data.title}</CardTitle>
+          <p className="text-[10px] text-muted-foreground text-center truncate" data-testid="node-subtext">
+            {data.subtext}
+          </p>
+        </CardHeader>
+        <CardContent className="p-2 pt-0">
+          <div className="flex flex-wrap justify-center gap-1 transition-all duration-200">
+            {inDefaultMode && (
+              <>
+                <LoadingButton
+                  isLoading={isFetching}
+                  loadingText="..."
+                  variant="outline"
+                  className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${
+                    isError ? "bg-gray-400" : trafficStatusColorClass
+                  }`}
+                >
+                  Flow
+                </LoadingButton>
+                <LoadingButton
+                  isLoading={isFetching}
+                  loadingText="..."
+                  variant="outline"
+                  className={`h-6 px-2 text-[10px] shadow-sm text-white flex-1 min-w-0 ${isError ? "bg-gray-400" : trendColorClass}`}
+                >
+                  Trend
+                </LoadingButton>
+                <LoadingButton
+                  isLoading={isFetching}
+                  loadingText="..."
+                  variant="outline"
+                  className="h-6 px-2 text-[10px] shadow-sm bg-transparent flex-1 min-w-0"
+                >
+                  Balanced
+                </LoadingButton>
+              </>
+            )}
+
+            {inLoadingMode && (
+              <>
+                <LoadingButton
+                  isLoading={true}
+                  loadingText="..."
+                  variant="outline"
+                  className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
+                >
+                  Summary
+                </LoadingButton>
+                <LoadingButton
+                  isLoading={true}
+                  loadingText="..."
+                  variant="outline"
+                  className="h-6 px-2 text-[10px] shadow-sm bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600 flex-1 min-w-0"
+                >
+                  Details
+                </LoadingButton>
+              </>
+            )}
+
+            {inResultsMode && (
+              <>
+                <LoadingButton
+                  isLoading={false}
+                  loadingText="..."
+                  variant="outline"
+                  className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
+                    isMatched
+                      ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                      : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                  }`}
+                  disabled={!isMatched}
+                >
+                  Summary
+                </LoadingButton>
+                <LoadingButton
+                  isLoading={isMatched && isDetailsLoading}
+                  loadingText="Loading..."
+                  variant="outline"
+                  className={`h-6 px-2 text-[10px] shadow-sm flex-1 min-w-0 ${
+                    isMatched
+                      ? "bg-blue-600 text-white hover:bg-blue-700 hover:text-white border-blue-600"
+                      : "bg-gray-300 text-gray-500 border-gray-300 cursor-not-allowed"
+                  }`}
+                  onClick={isMatched ? handleDetailsClick : undefined}
+                  disabled={!isMatched || isDetailsLoading}
+                >
+                  Details
+                </LoadingButton>
+              </>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <IncidentSheet
         isOpen={isIncidentSheetOpen}
         onClose={() => setIsIncidentSheetOpen(false)}
         nodeTitle={data.title}
         aitId={data.subtext}
       />
-    </ContextMenu>
+    </>
   )
 }
 
