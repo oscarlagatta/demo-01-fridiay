@@ -20,6 +20,7 @@ const tourSteps: Step[] = [
     ),
     placement: "bottom",
     disableBeacon: true,
+    isFixed: true,
   },
   {
     target: '[data-tour="search-box"]',
@@ -33,6 +34,7 @@ const tourSteps: Step[] = [
       </div>
     ),
     placement: "bottom",
+    isFixed: true,
   },
   {
     target: '[data-tour="sidebar-navigation"]',
@@ -46,6 +48,7 @@ const tourSteps: Step[] = [
       </div>
     ),
     placement: "right",
+    isFixed: true,
   },
   {
     target: '[data-tour="view-mode-toggle"]',
@@ -59,6 +62,7 @@ const tourSteps: Step[] = [
       </div>
     ),
     placement: "right",
+    isFixed: true,
   },
   {
     target: '[data-tour="flow-diagrams"]',
@@ -72,6 +76,7 @@ const tourSteps: Step[] = [
       </div>
     ),
     placement: "right",
+    isFixed: true,
   },
   {
     target: '[data-tour="main-diagram"]',
@@ -85,6 +90,7 @@ const tourSteps: Step[] = [
       </div>
     ),
     placement: "top",
+    isFixed: true,
   },
   {
     target: '[data-tour="node-manager"]',
@@ -97,6 +103,7 @@ const tourSteps: Step[] = [
       </div>
     ),
     placement: "bottom",
+    isFixed: true,
   },
   {
     target: '[data-tour="testing-panel"]',
@@ -110,6 +117,7 @@ const tourSteps: Step[] = [
       </div>
     ),
     placement: "top",
+    isFixed: true,
   },
 ]
 
@@ -179,6 +187,27 @@ export function GuidedTour({ autoStart = false, onTourComplete }: GuidedTourProp
     }
   }, [autoStart])
 
+  useEffect(() => {
+    if (run) {
+      // Prevent body scrolling when tour is active
+      document.body.style.overflow = "hidden"
+      document.body.style.position = "fixed"
+      document.body.style.width = "100%"
+    } else {
+      // Restore body scrolling when tour is inactive
+      document.body.style.overflow = ""
+      document.body.style.position = ""
+      document.body.style.width = ""
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = ""
+      document.body.style.position = ""
+      document.body.style.width = ""
+    }
+  }, [run])
+
   const handleJoyrideCallback = (data: CallBackProps) => {
     const { status, type, index } = data
 
@@ -217,6 +246,10 @@ export function GuidedTour({ autoStart = false, onTourComplete }: GuidedTourProp
         showProgress
         showSkipButton
         styles={tourStyles}
+        disableScrolling={true}
+        disableScrollParentFix={true}
+        spotlightClicks={false}
+        disableOverlayClose={false}
         locale={{
           back: "Back",
           close: "Close",
@@ -226,6 +259,11 @@ export function GuidedTour({ autoStart = false, onTourComplete }: GuidedTourProp
         }}
         floaterProps={{
           disableAnimation: false,
+          options: {
+            preventOverflow: {
+              boundariesElement: "viewport",
+            },
+          },
         }}
       />
 
