@@ -129,68 +129,42 @@ function SecondarySideBar({
 
         <div>
           {!isCollapsed && (
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">FLOW DIAGRAMS</h3>
-          )}
-          <nav className="space-y-1">
-            {paymentFlowItems.map((item) => {
-              if (item.id === "us-wires" && !isCollapsed) {
-                return (
-                  <div key={item.id} className="space-y-2">
-                    <button
-                      onClick={() => onSubItemSelected(item.id)}
-                      className={cn(
-                        "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors",
-                        selectedSubItem === item.id ? "text-white shadow-md" : "text-foreground hover:bg-accent",
-                      )}
-                      style={selectedSubItem === item.id ? { backgroundColor: "#1d4ed8" } : undefined}
-                    >
-                      <item.Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm">{item.title}</div>
-                        <div className="text-xs opacity-75 mt-0.5">{item.subtitle}</div>
-                      </div>
-                    </button>
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">FLOW DIAGRAMS</h3>
 
-                    {selectedSubItem === item.id && (
-                      <div className="ml-8 mr-2">
-                        <div className="flex items-center bg-gray-50 rounded-lg p-0.5 text-xs border">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onUSWiresModeChange("track-trace")
-                            }}
-                            className={cn(
-                              "flex items-center gap-1 px-2 py-1.5 rounded-md transition-all text-xs font-medium flex-1 justify-center whitespace-nowrap",
-                              usWiresMode === "track-trace"
-                                ? "bg-white shadow-sm text-blue-700 border border-blue-200"
-                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
-                            )}
-                          >
-                            <Search className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">Track</span>
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onUSWiresModeChange("observability")
-                            }}
-                            className={cn(
-                              "flex items-center gap-1 px-2 py-1.5 rounded-md transition-all text-xs font-medium flex-1 justify-center whitespace-nowrap",
-                              usWiresMode === "observability"
-                                ? "bg-white shadow-sm text-blue-700 border border-blue-200"
-                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
-                            )}
-                          >
-                            <Activity className="w-3 h-3 flex-shrink-0" />
-                            <span className="truncate">Monitor</span>
-                          </button>
-                        </div>
-                      </div>
+              <div className="bg-gray-50 rounded-lg p-3 border">
+                <div className="text-xs font-medium text-gray-700 mb-2">View Mode</div>
+                <div className="flex items-center bg-white rounded-md p-0.5 border shadow-sm">
+                  <button
+                    onClick={() => onUSWiresModeChange("track-trace")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-sm transition-all text-xs font-medium flex-1 justify-center whitespace-nowrap",
+                      usWiresMode === "track-trace"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
                     )}
-                  </div>
-                )
-              }
-
+                  >
+                    <Search className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">Track</span>
+                  </button>
+                  <button
+                    onClick={() => onUSWiresModeChange("observability")}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-sm transition-all text-xs font-medium flex-1 justify-center whitespace-nowrap",
+                      usWiresMode === "observability"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50",
+                    )}
+                  >
+                    <Activity className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate">Monitor</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          <nav className="space-y-1 mt-3">
+            {paymentFlowItems.map((item) => {
               return (
                 <button
                   key={item.id}
