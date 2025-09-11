@@ -21,10 +21,13 @@ import {
   Coins,
   Banknote,
   CircleDollarSign,
+  Search,
+  Activity,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { TransactionSearchProvider } from "@/components/transaction-search-provider"
+import { USWiresToggleContent } from "@/components/us-wires-toggle-content"
 
 const mainPageItems = [
   { id: "home-dashboard", title: "Home Dashboard", subtitle: "Overview and analytics", Icon: Home },
@@ -55,6 +58,8 @@ type SecondaryBarProps = {
   isVisible: boolean
   isCollapsed: boolean
   onToggleCollapse: () => void
+  usWiresMode: "track-trace" | "observability"
+  onUSWiresModeChange: (mode: "track-trace" | "observability") => void
 }
 
 function SecondarySideBar({
@@ -63,6 +68,8 @@ function SecondarySideBar({
   isVisible,
   isCollapsed,
   onToggleCollapse,
+  usWiresMode,
+  onUSWiresModeChange,
 }: SecondaryBarProps) {
   const [isApacExpanded, setIsApacExpanded] = useState(false)
 
@@ -125,27 +132,87 @@ function SecondarySideBar({
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">FLOW DIAGRAMS</h3>
           )}
           <nav className="space-y-1">
-            {paymentFlowItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onSubItemSelected(item.id)}
-                className={cn(
-                  "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors",
-                  selectedSubItem === item.id ? "text-white shadow-md" : "text-foreground hover:bg-accent",
-                  isCollapsed && "justify-center py-2",
-                )}
-                style={selectedSubItem === item.id ? { backgroundColor: "#1d4ed8" } : undefined}
-                title={isCollapsed ? item.title : undefined}
-              >
-                <item.Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
-                {!isCollapsed && (
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{item.title}</div>
-                    <div className="text-xs opacity-75 mt-0.5">{item.subtitle}</div>
+            {paymentFlowItems.map((item) => {
+              if (item.id === "us-wires" && !isCollapsed) {
+                return (
+                  <div key={item.id} className="space-y-2">
+                    <button
+                      onClick={() => onSubItemSelected(item.id)}
+                      className={cn(
+                        "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors",
+                        selectedSubItem === item.id ? "text-white shadow-md" : "text-foreground hover:bg-accent",
+                      )}
+                      style={selectedSubItem === item.id ? { backgroundColor: "#1d4ed8" } : undefined}
+                    >
+                      <item.Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{item.title}</div>
+                        <div className="text-xs opacity-75 mt-0.5">{item.subtitle}</div>
+                      </div>
+                    </button>
+
+                    {selectedSubItem === item.id && (
+                      <div className="ml-8 mr-2">
+                        <div className="flex items-center bg-gray-50 rounded-lg p-0.5 text-xs border">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onUSWiresModeChange("track-trace")
+                            }}
+                            className={cn(
+                              "flex items-center gap-1 px-2 py-1.5 rounded-md transition-all text-xs font-medium flex-1 justify-center whitespace-nowrap",
+                              usWiresMode === "track-trace"
+                                ? "bg-white shadow-sm text-blue-700 border border-blue-200"
+                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+                            )}
+                          >
+                            <Search className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">Track</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onUSWiresModeChange("observability")
+                            }}
+                            className={cn(
+                              "flex items-center gap-1 px-2 py-1.5 rounded-md transition-all text-xs font-medium flex-1 justify-center whitespace-nowrap",
+                              usWiresMode === "observability"
+                                ? "bg-white shadow-sm text-blue-700 border border-blue-200"
+                                : "text-gray-600 hover:text-gray-900 hover:bg-gray-100",
+                            )}
+                          >
+                            <Activity className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">Monitor</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </button>
-            ))}
+                )
+              }
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSubItemSelected(item.id)}
+                  className={cn(
+                    "flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors",
+                    selectedSubItem === item.id ? "text-white shadow-md" : "text-foreground hover:bg-accent",
+                    isCollapsed && "justify-center py-2",
+                  )}
+                  style={selectedSubItem === item.id ? { backgroundColor: "#1d4ed8" } : undefined}
+                  title={isCollapsed ? item.title : undefined}
+                >
+                  <item.Icon className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                  {!isCollapsed && (
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">{item.title}</div>
+                      <div className="text-xs opacity-75 mt-0.5">{item.subtitle}</div>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
 
             {!isCollapsed && (
               <div>
@@ -209,11 +276,16 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
   const [selectedMainItem] = useState("e2e-monitor")
   const [selectedSubItem, setSelectedSubItem] = useState("us-wires") // Set us-wires as default
   const [secondarySidebarCollapsed, setSecondarySidebarCollapsed] = useState(false)
+  const [usWiresMode, setUSWiresMode] = useState<"track-trace" | "observability">("track-trace")
 
   const renderContent = () => {
     switch (selectedSubItem) {
       case "us-wires":
-        return <div className="flex-1">{children}</div>
+        return (
+          <USWiresToggleContent mode={usWiresMode} onModeChange={setUSWiresMode}>
+            {children}
+          </USWiresToggleContent>
+        )
       case "home-dashboard":
         return (
           <div className="p-6">
@@ -324,6 +396,8 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
             isVisible={selectedMainItem === "e2e-monitor"}
             isCollapsed={secondarySidebarCollapsed}
             onToggleCollapse={() => setSecondarySidebarCollapsed(!secondarySidebarCollapsed)}
+            usWiresMode={usWiresMode}
+            onUSWiresModeChange={setUSWiresMode}
           />
         </div>
         <main className="bg-background flex flex-1 flex-col">{renderContent()}</main>
