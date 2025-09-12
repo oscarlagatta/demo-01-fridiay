@@ -51,6 +51,20 @@ const Flow = () => {
 
   const { data: splunkData, isLoading, isError, error, refetch, isFetching, isSuccess } = useGetSplunk()
 
+  const sectionDurations = {
+    "bg-origination": 1.2,
+    "bg-validation": 2.8,
+    "bg-middleware": 1.9,
+    "bg-processing": 3.4,
+  }
+
+  const sectionNames = {
+    "bg-origination": "Origination",
+    "bg-validation": "Validation & Routing",
+    "bg-middleware": "Middleware",
+    "bg-processing": "Processing & Investigation",
+  }
+
   const handleRefetch = async () => {
     try {
       await refetch()
@@ -136,6 +150,11 @@ const Flow = () => {
                 ...newNodes[nodeIndex].style,
                 width: `${sectionWidth}px`,
                 height: `${height}px`,
+              },
+              data: {
+                ...newNodes[nodeIndex].data,
+                duration: sectionDurations[sectionId as keyof typeof sectionDurations],
+                trend: sectionDurations[sectionId as keyof typeof sectionDurations] > 2.5 ? "up" : "down",
               },
             }
             currentX += sectionWidth + GAP_WIDTH
@@ -341,7 +360,6 @@ const Flow = () => {
 
   return (
     <div className="h-full w-full relative">
-      {/* Refresh Data Button - Icon only, docked top-right */}
       <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
         {lastRefetch && !isFetching && (
           <span className="text-xs text-muted-foreground">Last updated: {lastRefetch.toLocaleTimeString()}</span>
@@ -359,26 +377,27 @@ const Flow = () => {
         </Button>
       </div>
 
-      <ReactFlow
-        nodes={nodesForFlow}
-        edges={edgesForFlow}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        proOptions={{ hideAttribution: true }}
-        className="bg-white"
-        style={{ background: "#eeeff3ff" }}
-        panOnDrag={false}
-        elementsSelectable={false}
-        minZoom={1}
-        maxZoom={1}
-      >
-        <Controls />
-        <Background gap={16} size={1} />
-      </ReactFlow>
+      <div className="h-full">
+        <ReactFlow
+          nodes={nodesForFlow}
+          edges={edgesForFlow}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          proOptions={{ hideAttribution: true }}
+          className="bg-white"
+          style={{ background: "#eeeff3ff" }}
+          panOnDrag={false}
+          elementsSelectable={false}
+          minZoom={1}
+          maxZoom={1}
+        >
+          <Controls />
+          <Background gap={16} size={1} />
+        </ReactFlow>
+      </div>
 
-      {/* Selected panel */}
       {selectedNodeId && (
         <div className="absolute top-4 left-4 z-10 max-w-sm bg-white border rounded-lg shadow-lg p-4">
           <h3 className="text-sm font-semibold mb-2 text-gray-800">
