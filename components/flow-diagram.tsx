@@ -25,7 +25,6 @@ import SectionBackgroundNode from "./section-background-node"
 import { computeTrafficStatusColors } from "../lib/traffic-status-utils"
 import { Button } from "./ui/button"
 import { Skeleton } from "./ui/skeleton"
-import { TransactionDetailsTable } from "./transaction-details-table"
 import { useTransactionSearchContext } from "./transaction-search-provider"
 
 const nodeTypes: NodeTypes = {
@@ -51,12 +50,15 @@ const Flow = () => {
 
   const { data: splunkData, isLoading, isError, error, refetch, isFetching, isSuccess } = useGetSplunk()
 
-  const sectionDurations = {
-    "bg-origination": 1.2,
-    "bg-validation": 2.8,
-    "bg-middleware": 1.9,
-    "bg-processing": 3.4,
-  }
+  const sectionDurations = useMemo(
+    () => ({
+      "bg-origination": { duration: 1.2, trend: "down" as const },
+      "bg-validation": { duration: 2.8, trend: "up" as const },
+      "bg-middleware": { duration: 1.9, trend: "down" as const },
+      "bg-processing": { duration: 3.4, trend: "up" as const },
+    }),
+    [],
+  )
 
   const sectionNames = {
     "bg-origination": "Origination",
@@ -143,6 +145,8 @@ const Flow = () => {
             const sectionWidth = availableWidth * SECTION_WIDTH_PROPORTIONS[i]
             sectionDimensions[sectionId] = { x: currentX, width: sectionWidth }
 
+            const sectionData = sectionDurations[sectionId]
+
             newNodes[nodeIndex] = {
               ...newNodes[nodeIndex],
               position: { x: currentX, y: 0 },
@@ -153,8 +157,11 @@ const Flow = () => {
               },
               data: {
                 ...newNodes[nodeIndex].data,
-                duration: sectionDurations[sectionId as keyof typeof sectionDurations],
-                trend: sectionDurations[sectionId as keyof typeof sectionDurations] > 2.5 ? "up" : "down",
+                duration: sectionData?.duration,
+                trend: sectionData?.trend || "stable",
+                isLoading: false,
+                hasError: false,
+                lastUpdated: new Date(),
               },
             }
             currentX += sectionWidth + GAP_WIDTH
@@ -189,7 +196,7 @@ const Flow = () => {
         return newNodes
       })
     }
-  }, [width, height])
+  }, [width, height, sectionDurations])
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes])
 
@@ -265,7 +272,7 @@ const Flow = () => {
         <div className="space-y-3">
           <div className="flex items-center space-x-2">
             <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-            <span className="text-sm font-medium text-blue-600">Loading Splunk data...</span>
+            <span className="text-sm font-medium text-blue-600">Loading data...</span>
           </div>
           <div className="space-y-2">
             <Skeleton className="h-4 w-32" />
@@ -284,7 +291,7 @@ const Flow = () => {
             <AlertCircle className="h-4 w-4" />
             <span className="text-sm font-medium">Error loading data</span>
           </div>
-          <p className="text-sm text-red-500">{error?.message || "Failed to load Splunk data"}</p>
+          <p className="text-sm text-red-500">{error?.message || "Failed to load data"}</p>
           <Button
             onClick={handleRefetch}
             size="sm"
@@ -355,7 +362,7 @@ const Flow = () => {
   }
 
   if (showTableView) {
-    return <TransactionDetailsTable />
+    return null
   }
 
   return (
@@ -370,8 +377,8 @@ const Flow = () => {
           variant="outline"
           size="sm"
           className="h-8 w-8 p-0 shadow-sm border-blue-200 hover:border-blue-300 hover:bg-blue-50 bg-white"
-          title="Refresh Splunk data"
-          aria-label="Refresh Splunk data"
+          title="Refresh data"
+          aria-label="Refresh data"
         >
           <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
         </Button>
