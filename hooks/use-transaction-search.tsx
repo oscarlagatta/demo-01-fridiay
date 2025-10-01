@@ -266,28 +266,39 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
       return false
     }
 
-    // Get the first transaction's _raw data
-    const firstTransaction = query.data.results[0]
-    if (!firstTransaction || !firstTransaction._raw) {
+    // Find the transaction with aitNumber "1901"
+    const targetTransaction = query.data.results.find((transaction) => transaction.aitNumber === "1901")
+
+    // Check if the target transaction exists and has _raw data
+    if (!targetTransaction || !targetTransaction._raw) {
       return false
     }
 
     // Check if CONTEXT_STATUS exists in _raw and has a meaningful value
-    const contextStatus = firstTransaction._raw.CONTEXT_STATUS
+    const contextStatus = targetTransaction._raw.CONTEXT_STATUS
     if (!contextStatus || contextStatus.trim() === "") {
       return false
     }
 
-    // Valid context status found
+    // Valid context status found in aitNumber 1901
     return true
   }, [query.data, query.isError, query.isLoading])
 
   const contextStatus = useMemo(() => {
-    if (!hasValidContext || !query.data?.results?.[0]?._raw) {
+    if (!query.data?.results || query.data.results.length === 0) {
       return undefined
     }
-    return query.data.results[0]._raw.CONTEXT_STATUS
-  }, [hasValidContext, query.data])
+
+    // Find the transaction with aitNumber "1901"
+    const targetTransaction = query.data.results.find((transaction) => transaction.aitNumber === "1901")
+
+    // Return the CONTEXT_STATUS if it exists
+    if (!targetTransaction || !targetTransaction._raw) {
+      return undefined
+    }
+
+    return targetTransaction._raw.CONTEXT_STATUS
+  }, [query.data])
 
   const context = query.data?.context
 
