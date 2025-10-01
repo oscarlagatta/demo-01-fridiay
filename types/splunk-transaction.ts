@@ -39,6 +39,7 @@ export interface Raw {
   BCC_CPS_CORRELATION: string // transaction id
   REC_CRT_TS: string
   DBA_APPROVED_BY_USERID2: string
+  CONTEXT_STATUS?: string // Added CONTEXT_STATUS property to support payment context information
 }
 
 // A lightweight normalized summary shape the hook exposes

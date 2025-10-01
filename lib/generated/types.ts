@@ -35,6 +35,7 @@ export interface GetApiV2SplunkDataGetTransactionDetailsDataResponse {
     REC_CRT_TS: string
     REC_UPD_TS: string
     ELAPSED_TIME_SECONDS: string
+    CONTEXT_STATUS?: string
     [key: string]: any
   }
   context?: {

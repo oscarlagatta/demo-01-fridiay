@@ -261,22 +261,33 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
       return false
     }
 
-    // Check if context exists and has meaningful content
-    const context = query.data.context
-    if (!context) {
+    // Check if we have results with at least one transaction
+    if (!query.data.results || query.data.results.length === 0) {
       return false
     }
 
-    // Validate that context contains at least one meaningful field
-    // (paymentStatus, statusCode, or any other non-empty property)
-    const hasPaymentStatus = context.paymentStatus && context.paymentStatus.trim() !== ""
-    const hasStatusCode = context.statusCode && context.statusCode.trim() !== ""
-    const hasOtherData = Object.keys(context).some(
-      (key) => key !== "paymentStatus" && key !== "statusCode" && context[key] != null && context[key] !== "",
-    )
+    // Get the first transaction's _raw data
+    const firstTransaction = query.data.results[0]
+    if (!firstTransaction || !firstTransaction._raw) {
+      return false
+    }
 
-    return hasPaymentStatus || hasStatusCode || hasOtherData
+    // Check if CONTEXT_STATUS exists in _raw and has a meaningful value
+    const contextStatus = firstTransaction._raw.CONTEXT_STATUS
+    if (!contextStatus || contextStatus.trim() === "") {
+      return false
+    }
+
+    // Valid context status found
+    return true
   }, [query.data, query.isError, query.isLoading])
+
+  const contextStatus = useMemo(() => {
+    if (!hasValidContext || !query.data?.results?.[0]?._raw) {
+      return undefined
+    }
+    return query.data.results[0]._raw.CONTEXT_STATUS
+  }, [hasValidContext, query.data])
 
   const context = query.data?.context
 
@@ -287,6 +298,7 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
     summary,
     context,
     hasValidContext,
+    contextStatus,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,
