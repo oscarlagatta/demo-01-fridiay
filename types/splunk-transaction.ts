@@ -57,11 +57,20 @@ export interface TransactionSummary {
   metadata: Record<string, string | number | boolean>
 }
 
+export interface PaymentContext {
+  paymentStatus?: string
+  statusCode?: string
+  statusMessage?: string
+  lastUpdated?: string
+  [key: string]: any // Allow for additional context fields
+}
+
 // API response shape
 export interface TransactionApiResponse {
   id: string
   results: SplunkTransactionDetails
   summary: TransactionSummary
+  context?: PaymentContext
 }
 
 // Search parameters interface

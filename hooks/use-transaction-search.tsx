@@ -148,10 +148,13 @@ function transformApiResponse(
 
   const summary = buildSummary(searchKey, results)
 
+  const context = responseArray[0]?.context
+
   return {
     id: searchKey,
     results,
     summary,
+    context,
   }
 }
 
@@ -252,11 +255,38 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
   const results: SplunkTransactionDetails | undefined = query.data?.results
   const summary: TransactionSummary | undefined = query.data?.summary
 
+  const hasValidContext = useMemo(() => {
+    // Check if we have a successful response with data
+    if (!query.data || query.isError || query.isLoading) {
+      return false
+    }
+
+    // Check if context exists and has meaningful content
+    const context = query.data.context
+    if (!context) {
+      return false
+    }
+
+    // Validate that context contains at least one meaningful field
+    // (paymentStatus, statusCode, or any other non-empty property)
+    const hasPaymentStatus = context.paymentStatus && context.paymentStatus.trim() !== ""
+    const hasStatusCode = context.statusCode && context.statusCode.trim() !== ""
+    const hasOtherData = Object.keys(context).some(
+      (key) => key !== "paymentStatus" && key !== "statusCode" && context[key] != null && context[key] !== "",
+    )
+
+    return hasPaymentStatus || hasStatusCode || hasOtherData
+  }, [query.data, query.isError, query.isLoading])
+
+  const context = query.data?.context
+
   return {
     id: searchKey,
     searchParams,
     results,
     summary,
+    context,
+    hasValidContext,
     isLoading: query.isLoading,
     isFetching: query.isFetching,
     isError: query.isError,

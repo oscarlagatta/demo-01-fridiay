@@ -37,4 +37,11 @@ export interface GetApiV2SplunkDataGetTransactionDetailsDataResponse {
     ELAPSED_TIME_SECONDS: string
     [key: string]: any
   }
+  context?: {
+    paymentStatus?: string
+    statusCode?: string
+    statusMessage?: string
+    lastUpdated?: string
+    [key: string]: any
+  }
 }
