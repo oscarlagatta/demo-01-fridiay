@@ -1,5 +1,5 @@
 "use client"
-import { useState, useCallback, useEffect, useMemo } from "react"
+import { useState, useCallback, useMemo } from "react"
 import {
   ReactFlow,
   Background,
@@ -13,7 +13,6 @@ import {
   MarkerType,
   ReactFlowProvider,
   type NodeTypes,
-  useStore,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
 import { Loader2, RefreshCw, AlertCircle } from "lucide-react"
@@ -27,7 +26,6 @@ import { Button } from "./ui/button"
 import { Skeleton } from "./ui/skeleton"
 import { TransactionDetailsTable } from "./transaction-details-table"
 import { useTransactionSearchContext } from "./transaction-search-provider"
-import { calculateSectionBounds } from "../lib/swimline-utils"
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -45,9 +43,6 @@ const Flow = () => {
   const [connectedNodeIds, setConnectedNodeIds] = useState<Set<string>>(new Set())
   const [connectedEdgeIds, setConnectedEdgeIds] = useState<Set<string>>(new Set())
   const [lastRefetch, setLastRefetch] = useState<Date | null>(null)
-
-  const width = useStore((state) => state.width)
-  const height = useStore((state) => state.height)
 
   const { data: splunkData, isLoading, isError, error, refetch, isFetching, isSuccess } = useGetSplunk()
 
@@ -111,69 +106,7 @@ const Flow = () => {
       .sort()
   }, [selectedNodeId, connectedNodeIds, nodes])
 
-  useEffect(() => {
-    console.log("[v0] Recalculating dynamic swimline bounds")
-
-    // Calculate bounds for each section based on child nodes
-    const sectionBounds = calculateSectionBounds(nodes, SECTION_IDS)
-
-    // Position sections horizontally with gaps
-    let currentX = 0
-    const orderedSections = SECTION_IDS.map((sectionId) => {
-      const bounds = sectionBounds.get(sectionId)!
-      const sectionX = currentX
-      currentX += bounds.width + HORIZONTAL_SECTION_GAP
-      return { sectionId, x: sectionX, bounds }
-    })
-
-    // Update section positions
-    orderedSections.forEach(({ sectionId, x, bounds }) => {
-      bounds.x = x
-    })
-
-    // Update all nodes with new positions and dimensions
-    setNodes((currentNodes) => {
-      const updatedNodes = currentNodes.map((node) => {
-        const bounds = sectionBounds.get(node.id)
-
-        if (bounds && node.type === "background") {
-          // Update background node with calculated bounds
-          return {
-            ...node,
-            position: { x: bounds.x, y: bounds.y },
-            style: {
-              ...node.style,
-              width: `${bounds.width}px`,
-              height: `${bounds.height}px`,
-            },
-          }
-        }
-
-        // Update child node positions to be absolute (not relative to parent)
-        const parentId = (node as any).parentId || node.parentNode
-        if (parentId && sectionBounds.has(parentId)) {
-          const parentBounds = sectionBounds.get(parentId)!
-          const originalNode = initialNodes.find((n) => n.id === node.id)
-
-          if (originalNode) {
-            return {
-              ...node,
-              position: {
-                x: parentBounds.x + originalNode.position.x + 40, // Add padding offset
-                y: parentBounds.y + originalNode.position.y + 60, // Add header offset
-              },
-            }
-          }
-        }
-
-        return node
-      })
-
-      return updatedNodes
-    })
-  }, []) // Only run once on mount
-
-  const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes])
+  const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [])
 
   const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), [setEdges])
 
@@ -184,7 +117,6 @@ const Flow = () => {
           {
             ...connection,
             type: "smoothstep",
-            markerStart: { type: MarkerType.ArrowClosed, color: "#6b7280" },
             markerEnd: { type: MarkerType.ArrowClosed, color: "#6b7280" },
             style: { strokeWidth: 2, stroke: "#6b7280" },
           },
@@ -370,10 +302,8 @@ const Flow = () => {
         proOptions={{ hideAttribution: true }}
         className="bg-white"
         style={{ background: "#eeeff3ff" }}
-        panOnDrag={false}
-        elementsSelectable={false}
-        minZoom={1}
-        maxZoom={1}
+        fitView
+        fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
       >
         <Controls />
         <Background gap={16} size={1} />
@@ -411,7 +341,6 @@ const Flow = () => {
 }
 
 export function FlowDiagram() {
-  // Use the top-level QueryProvider; only keep ReactFlowProvider here
   return (
     <ReactFlowProvider>
       <Flow />

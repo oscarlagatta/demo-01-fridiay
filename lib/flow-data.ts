@@ -1,12 +1,10 @@
 import { type Node, type Edge, MarkerType } from "@xyflow/react"
 import apiData from "./api-data.json"
 
-// Define a custom type for our application's node data, which uses parentId
 export type AppNode = Omit<Node, "parentNode"> & {
   parentId?: string
 }
 
-// --- Static Section Definitions ---
 const backgroundNodes: AppNode[] = [
   {
     id: "bg-origination",
@@ -16,41 +14,39 @@ const backgroundNodes: AppNode[] = [
     draggable: false,
     selectable: false,
     zIndex: -1,
-    style: { width: "350px", height: "960px" },
+    style: { width: "380px", height: "900px" },
   },
   {
     id: "bg-validation",
     type: "background",
-    position: { x: 350, y: 0 },
+    position: { x: 460, y: 0 },
     data: { title: "Payment Validation and Routing" },
     draggable: false,
     selectable: false,
     zIndex: -1,
-    style: { width: "350px", height: "960px" },
+    style: { width: "380px", height: "900px" },
   },
   {
     id: "bg-middleware",
     type: "background",
-    position: { x: 700, y: 0 },
+    position: { x: 920, y: 0 },
     data: { title: "Middleware" },
     draggable: false,
     selectable: false,
     zIndex: -1,
-    style: { width: "450px", height: "960px" },
+    style: { width: "380px", height: "500px" },
   },
   {
     id: "bg-processing",
     type: "background",
-    position: { x: 1150, y: 0 },
+    position: { x: 1380, y: 0 },
     data: { title: "Payment Processing, Sanctions & Investigation" },
     draggable: false,
     selectable: false,
     zIndex: -1,
-    style: { width: "500px", height: "960px" },
+    style: { width: "520px", height: "900px" },
   },
 ]
-
-// --- Data Transformation Logic ---
 
 const classToParentId: Record<string, string> = {
   origination: "bg-origination",
@@ -59,46 +55,42 @@ const classToParentId: Record<string, string> = {
   "payment processing, sanctions and investigation": "bg-processing",
 }
 
-const sectionPositions: Record<string, { baseX: number; positions: { x: number; y: number }[] }> = {
+const sectionPositions: Record<string, { positions: { x: number; y: number }[] }> = {
   "bg-origination": {
-    baseX: 50,
     positions: [
-      { x: 50, y: 100 },
-      { x: 50, y: 220 },
-      { x: 50, y: 340 },
-      { x: 50, y: 460 },
-      { x: 50, y: 580 },
-      { x: 50, y: 700 },
+      { x: 80, y: 80 },
+      { x: 80, y: 220 },
+      { x: 80, y: 360 },
+      { x: 80, y: 500 },
+      { x: 80, y: 640 },
+      { x: 80, y: 780 },
     ],
   },
   "bg-validation": {
-    baseX: 425,
     positions: [
-      { x: 425, y: 100 },
-      { x: 425, y: 220 },
-      { x: 425, y: 340 },
-      { x: 425, y: 480 },
-      { x: 425, y: 590 },
-      { x: 425, y: 700 },
+      { x: 80, y: 80 },
+      { x: 80, y: 220 },
+      { x: 80, y: 360 },
+      { x: 80, y: 500 },
+      { x: 80, y: 640 },
+      { x: 80, y: 780 },
     ],
   },
   "bg-middleware": {
-    baseX: 750,
     positions: [
-      { x: 750, y: 220 },
-      { x: 950, y: 400 },
+      { x: 80, y: 80 },
+      { x: 80, y: 280 },
     ],
   },
   "bg-processing": {
-    baseX: 1200,
     positions: [
-      { x: 1200, y: 160 },
-      { x: 1420, y: 160 },
-      { x: 1310, y: 300 },
-      { x: 1310, y: 420 },
-      { x: 1200, y: 580 },
-      { x: 1200, y: 700 },
-      { x: 1200, y: 820 },
+      { x: 60, y: 80 },
+      { x: 260, y: 80 },
+      { x: 160, y: 240 },
+      { x: 160, y: 380 },
+      { x: 60, y: 540 },
+      { x: 60, y: 680 },
+      { x: 260, y: 680 },
     ],
   },
 }
@@ -119,17 +111,18 @@ function transformApiData() {
       const sectionConfig = sectionPositions[parentId]
       const positionIndex = sectionCounters[parentId]++
       const position = sectionConfig.positions[positionIndex] || {
-        x: sectionConfig.baseX,
-        y: 100 + positionIndex * 120,
+        x: 80,
+        y: 80 + positionIndex * 140,
       }
 
       return {
         id: apiNode.id,
         type: "custom" as const,
-        position,
+        position, // Position is now relative to parent
         data: { title: apiNode.data.label, subtext: `AIT ${apiNode.id}` },
         parentId: parentId,
-        extent: "parent",
+        extent: "parent", // Constrain nodes within parent boundaries
+        draggable: true, // Allow dragging but constrained to parent
       }
     })
     .filter((n): n is AppNode => n !== null)
@@ -137,33 +130,50 @@ function transformApiData() {
   const edgeStyle = { stroke: "#6b7280", strokeWidth: 2 }
   const marker = { type: MarkerType.ArrowClosed, color: "#6b7280" }
 
-  const transformedEdges = apiData.edges.flatMap((apiEdge) => {
-    const { source, target } = apiEdge
-    if (Array.isArray(target)) {
-      // If target is an array, create multiple edges
-      return target.map((t) => ({
-        id: `${source}-${t}`,
-        source: source,
-        target: t,
-        type: "smoothstep",
-        style: edgeStyle, // Use solid line style
-        markerStart: marker,
-        markerEnd: marker,
-      }))
-    } else {
-      // If target is a single string, create one edge
-      return [
-        {
-          ...apiEdge,
-          target: target,
+  const essentialEdges = new Set([
+    "11554-512",
+    "48581-4679",
+    "41107-28960",
+    "70199-28960",
+    "70199-515",
+    "70199-60745",
+    "4679-1901",
+    "4679-882",
+    "4679-515",
+    "28960-15227",
+    "28960-4679",
+    "15227-834",
+    "834-4679",
+    "60745-1901",
+    "60745-882",
+  ])
+
+  const transformedEdges = apiData.edges
+    .flatMap((apiEdge) => {
+      const { source, target } = apiEdge
+      if (Array.isArray(target)) {
+        return target.map((t) => ({
+          id: `${source}-${t}`,
+          source: source,
+          target: t,
           type: "smoothstep",
-          style: edgeStyle, // Use solid line style
-          markerStart: marker,
+          style: edgeStyle,
           markerEnd: marker,
-        },
-      ]
-    }
-  })
+        }))
+      } else {
+        return [
+          {
+            id: apiEdge.id || `${source}-${target}`,
+            source: source,
+            target: target,
+            type: "smoothstep",
+            style: edgeStyle,
+            markerEnd: marker,
+          },
+        ]
+      }
+    })
+    .filter((edge) => essentialEdges.has(edge.id)) // Only include essential edges
 
   return {
     nodes: [...backgroundNodes, ...transformedNodes],
