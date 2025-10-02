@@ -27,6 +27,7 @@ import { Button } from "./ui/button"
 import { Skeleton } from "./ui/skeleton"
 import { TransactionDetailsTable } from "./transaction-details-table"
 import { useTransactionSearchContext } from "./transaction-search-provider"
+import { calculateSectionBounds } from "../lib/swimline-utils"
 
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
@@ -34,8 +35,7 @@ const nodeTypes: NodeTypes = {
 }
 
 const SECTION_IDS = ["bg-origination", "bg-validation", "bg-middleware", "bg-processing"]
-const SECTION_WIDTH_PROPORTIONS = [0.2, 0.2, 0.25, 0.35]
-const GAP_WIDTH = 16
+const HORIZONTAL_SECTION_GAP = 80 // Gap between sections horizontally
 
 const Flow = () => {
   const { showTableView } = useTransactionSearchContext()
@@ -112,65 +112,66 @@ const Flow = () => {
   }, [selectedNodeId, connectedNodeIds, nodes])
 
   useEffect(() => {
-    if (width > 0 && height > 0) {
-      setNodes((currentNodes) => {
-        const totalGapWidth = GAP_WIDTH * (SECTION_IDS.length - 1)
-        const availableWidth = width - totalGapWidth
-        let currentX = 0
+    console.log("[v0] Recalculating dynamic swimline bounds")
 
-        const newNodes = [...currentNodes]
-        const sectionDimensions: Record<string, { x: number; width: number }> = {}
+    // Calculate bounds for each section based on child nodes
+    const sectionBounds = calculateSectionBounds(nodes, SECTION_IDS)
 
-        for (let i = 0; i < SECTION_IDS.length; i++) {
-          const sectionId = SECTION_IDS[i]
-          const nodeIndex = newNodes.findIndex((n) => n.id === sectionId)
+    // Position sections horizontally with gaps
+    let currentX = 0
+    const orderedSections = SECTION_IDS.map((sectionId) => {
+      const bounds = sectionBounds.get(sectionId)!
+      const sectionX = currentX
+      currentX += bounds.width + HORIZONTAL_SECTION_GAP
+      return { sectionId, x: sectionX, bounds }
+    })
 
-          if (nodeIndex !== -1) {
-            const sectionWidth = availableWidth * SECTION_WIDTH_PROPORTIONS[i]
-            sectionDimensions[sectionId] = { x: currentX, width: sectionWidth }
+    // Update section positions
+    orderedSections.forEach(({ sectionId, x, bounds }) => {
+      bounds.x = x
+    })
 
-            newNodes[nodeIndex] = {
-              ...newNodes[nodeIndex],
-              position: { x: currentX, y: 0 },
-              style: {
-                ...newNodes[nodeIndex].style,
-                width: `${sectionWidth}px`,
-                height: `${height}px`,
+    // Update all nodes with new positions and dimensions
+    setNodes((currentNodes) => {
+      const updatedNodes = currentNodes.map((node) => {
+        const bounds = sectionBounds.get(node.id)
+
+        if (bounds && node.type === "background") {
+          // Update background node with calculated bounds
+          return {
+            ...node,
+            position: { x: bounds.x, y: bounds.y },
+            style: {
+              ...node.style,
+              width: `${bounds.width}px`,
+              height: `${bounds.height}px`,
+            },
+          }
+        }
+
+        // Update child node positions to be absolute (not relative to parent)
+        const parentId = (node as any).parentId || node.parentNode
+        if (parentId && sectionBounds.has(parentId)) {
+          const parentBounds = sectionBounds.get(parentId)!
+          const originalNode = initialNodes.find((n) => n.id === node.id)
+
+          if (originalNode) {
+            return {
+              ...node,
+              position: {
+                x: parentBounds.x + originalNode.position.x + 40, // Add padding offset
+                y: parentBounds.y + originalNode.position.y + 60, // Add header offset
               },
             }
-            currentX += sectionWidth + GAP_WIDTH
           }
         }
 
-        for (let i = 0; i < newNodes.length; i++) {
-          const node = newNodes[i]
-          if (node.parentId && sectionDimensions[node.parentId]) {
-            const parentDimensions = sectionDimensions[node.parentId]
-
-            const originalNode = initialNodes.find((n) => n.id === node.id)
-            const originalParent = initialNodes.find((n) => n.id === node.parentId)
-
-            if (originalNode && originalParent && originalParent.style?.width) {
-              const originalParentWidth = Number.parseFloat(originalParent.style.width as string)
-              const originalRelativeXOffset = originalNode.position.x - originalParent.position.x
-
-              const newAbsoluteX =
-                parentDimensions.x + (originalRelativeXOffset / originalParentWidth) * parentDimensions.width
-
-              newNodes[i] = {
-                ...node,
-                position: {
-                  x: newAbsoluteX,
-                  y: node.position.y,
-                },
-              }
-            }
-          }
-        }
-        return newNodes
+        return node
       })
-    }
-  }, [width, height])
+
+      return updatedNodes
+    })
+  }, []) // Only run once on mount
 
   const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), [setNodes])
 
@@ -207,8 +208,8 @@ const Flow = () => {
         onClick: handleNodeClick,
       }
 
-      if (node.parentId) {
-        const { parentId, ...rest } = node
+      if ((node as any).parentId) {
+        const { parentId, ...rest } = node as any
         return {
           ...rest,
           parentNode: parentId,
