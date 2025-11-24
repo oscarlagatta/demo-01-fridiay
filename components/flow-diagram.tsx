@@ -34,7 +34,7 @@ const nodeTypes: NodeTypes = {
 
 const SECTION_IDS = ["bg-origination", "bg-validation", "bg-middleware", "bg-processing"]
 const SECTION_WIDTH_PROPORTIONS = [0.2, 0.2, 0.25, 0.35]
-const GAP_WIDTH = 16
+const GAP_WIDTH = 0
 
 const Flow = () => {
   const { showTableView } = useTransactionSearchContext()

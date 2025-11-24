@@ -26,15 +26,15 @@ const SectionBackgroundNode = ({ data }: NodeProps<SectionBackgroundNodeType>) =
 
   if (showUSHeader) {
     return (
-      <div className={`h-full w-full rounded-lg transition-all duration-200 ${data.isDimmed ? "opacity-60" : ""}`}>
+      <div className={`h-full w-full transition-all duration-200 ${data.isDimmed ? "opacity-60" : ""}`}>
         <div className="relative w-full h-16">
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 flex items-center justify-center">
             {/* Chevron shape using CSS clip-path */}
             <div
-              className="relative h-full w-full flex items-center justify-center text-white font-bold text-base"
+              className="relative h-full w-full flex items-center justify-center text-white font-bold text-sm sm:text-base"
               style={{
                 background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
-                clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%, 20px 50%)",
+                clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%, 24px 50%)",
               }}
             >
               {/* White border effect */}
@@ -42,18 +42,19 @@ const SectionBackgroundNode = ({ data }: NodeProps<SectionBackgroundNodeType>) =
                 className="absolute inset-0"
                 style={{
                   background: "white",
-                  clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%, 20px 50%)",
-                  padding: "2px",
+                  clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%, 24px 50%)",
                 }}
               >
                 <div
-                  className="w-full h-full flex items-center justify-center"
+                  className="w-full h-full flex items-center justify-center m-[2px]"
                   style={{
                     background: "linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)",
-                    clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%, 20px 50%)",
+                    clipPath: "polygon(0 0, calc(100% - 24px) 0, 100% 50%, calc(100% - 24px) 100%, 0 100%, 24px 50%)",
                   }}
                 >
-                  <span className="px-8 text-center font-semibold tracking-wide">{phaseTitle}</span>
+                  <span className="px-4 sm:px-8 text-center font-semibold tracking-wide whitespace-nowrap overflow-hidden text-ellipsis">
+                    {phaseTitle}
+                  </span>
                 </div>
               </div>
             </div>
