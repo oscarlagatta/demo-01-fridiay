@@ -162,6 +162,7 @@ const Flow = () => {
                 isLoading: false,
                 hasError: false,
                 lastUpdated: new Date(),
+                region: "US", // Added region prop to enable US-specific headers
               },
             }
             currentX += sectionWidth + GAP_WIDTH
