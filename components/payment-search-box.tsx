@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, X } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useTransactionSearchContext } from "@/components/transaction-search-provider"
@@ -14,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query"
 const ID_REGEX = /^[A-Z0-9]{16}$/
 
 interface SearchCriteria {
+  transactionType: string
   transactionId: string
   transactionAmount: string
   dateStart: string
@@ -22,6 +24,7 @@ interface SearchCriteria {
 
 function PaymentSearchBox() {
   const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
+    transactionType: "",
     transactionId: "",
     transactionAmount: "",
     dateStart: "",
@@ -53,8 +56,15 @@ function PaymentSearchBox() {
     const hasId = validId
     const hasAmount = searchCriteria.transactionAmount.trim() !== ""
     const hasDateRange = searchCriteria.dateStart || searchCriteria.dateEnd
-    return hasId || hasAmount || hasDateRange
-  }, [validId, searchCriteria.transactionAmount, searchCriteria.dateStart, searchCriteria.dateEnd])
+    const hasType = searchCriteria.transactionType !== ""
+    return hasId || hasAmount || hasDateRange || hasType
+  }, [
+    validId,
+    searchCriteria.transactionAmount,
+    searchCriteria.dateStart,
+    searchCriteria.dateEnd,
+    searchCriteria.transactionType,
+  ])
 
   const hasAnyValue = useMemo(() => Object.values(searchCriteria).some((v) => v.trim() !== ""), [searchCriteria])
 
@@ -62,6 +72,7 @@ function PaymentSearchBox() {
     if (!hasValidSearch) return
 
     searchByAll({
+      transactionType: searchCriteria.transactionType || undefined,
       transactionId: searchCriteria.transactionId.trim() || undefined,
       transactionAmount: searchCriteria.transactionAmount.trim() || undefined,
       dateStart: searchCriteria.dateStart || undefined,
@@ -70,18 +81,16 @@ function PaymentSearchBox() {
   }
 
   const handleClear = async () => {
-    // Reset local inputs
     setSearchCriteria({
+      transactionType: "",
       transactionId: "",
       transactionAmount: "",
       dateStart: "",
       dateEnd: "",
     })
 
-    // Exit transaction search mode so nodes show Flow/Trend/Balanced again
     clearTx()
 
-    // Force-refresh Splunk data so Flow/Trend/Balanced color statuses are up to date
     await queryClient.invalidateQueries({ queryKey: ["splunk-data"] })
     await queryClient.refetchQueries({ queryKey: ["splunk-data"] })
   }
@@ -97,7 +106,33 @@ function PaymentSearchBox() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 items-end max-w-full">
-            {/* Transaction ID with fixed helper height to avoid alignment shift */}
+            <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
+              <Label htmlFor="transaction-type">Transaction Type</Label>
+              <Select
+                value={searchCriteria.transactionType}
+                onValueChange={(value) => handleInputChange("transactionType", value)}
+                disabled={isSearching}
+              >
+                <SelectTrigger id="transaction-type">
+                  <SelectValue placeholder="Select transaction type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="message-payment">Message Payment</SelectItem>
+                  <SelectItem value="FilepaymentINRINR">File payment INR-INR</SelectItem>
+                  <SelectItem value="FilePaymentUSDINR">File Payment USD-INR</SelectItem>
+                  <SelectItem value="FilePaymentNONUSDINRWIP">File Payment NNUSD-INR [WIP]</SelectItem>
+                  <SelectItem value="UPIOutbound">UPI Outbound</SelectItem>
+                  <SelectItem value="UPIInbound">UPI Inbound</SelectItem>
+                  <SelectItem value="NEFTRTGSIMPSINBOUND">NEFT / RTGS / IMPS INBOUND</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="h-4">
+                {searchCriteria.transactionType ? (
+                  <span className="text-[10px] text-green-600">Type filter applied</span>
+                ) : null}
+              </div>
+            </div>
+
             <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
               <Label htmlFor="transaction-id">Transaction ID</Label>
               <Input
@@ -116,7 +151,6 @@ function PaymentSearchBox() {
               </div>
             </div>
 
-            {/* Amount with spacer for consistent alignment */}
             <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
               <Label htmlFor="transaction-amount">Transaction Amount</Label>
               <Input
@@ -135,7 +169,6 @@ function PaymentSearchBox() {
               </div>
             </div>
 
-            {/* Date Start with spacer */}
             <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
               <Label htmlFor="date-start">Date Range (Start)</Label>
               <Input
@@ -149,7 +182,6 @@ function PaymentSearchBox() {
               <div className="h-4" />
             </div>
 
-            {/* Date End with spacer */}
             <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
               <Label htmlFor="date-end">Date Range (End)</Label>
               <Input
@@ -163,7 +195,6 @@ function PaymentSearchBox() {
               <div className="h-4" />
             </div>
 
-            {/* Buttons aligned with inputs, consistent gap */}
             <div className="flex items-end gap-2 flex-shrink-0">
               <Button
                 onClick={handleSearch}
