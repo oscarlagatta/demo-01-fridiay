@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, X } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -27,12 +28,17 @@ function getDefaultDateRange() {
   const startDate = new Date()
   startDate.setDate(startDate.getDate() - 7)
 
-  // Format as YYYY-MM-DD for input[type="date"]
-  const formatDate = (date: Date) => date.toISOString().split("T")[0]
+  const formatDateWithTime = (date: Date, isEndDate = false): string => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    const time = isEndDate ? "T23:59:59" : "T00:00:00"
+    return `${year}-${month}-${day}${time}`
+  }
 
   return {
-    dateStart: formatDate(startDate),
-    dateEnd: formatDate(endDate),
+    dateStart: formatDateWithTime(startDate, false),
+    dateEnd: formatDateWithTime(endDate, true),
   }
 }
 
@@ -67,8 +73,11 @@ function PaymentSearchBox() {
     }))
 
     if (field === "dateStart" || field === "dateEnd") {
-      const currentIsDefault =
-        searchCriteria.dateStart === defaultDates.dateStart && searchCriteria.dateEnd === defaultDates.dateEnd
+      const currentDateStart = searchCriteria.dateStart.split("T")[0]
+      const currentDateEnd = searchCriteria.dateEnd.split("T")[0]
+      const defaultDateStart = defaultDates.dateStart.split("T")[0]
+      const defaultDateEnd = defaultDates.dateEnd.split("T")[0]
+      const currentIsDefault = currentDateStart === defaultDateStart && currentDateEnd === defaultDateEnd
       setIsDefaultDates(currentIsDefault)
     }
   }
@@ -130,6 +139,9 @@ function PaymentSearchBox() {
 
   const isSearching = txFetching
 
+  const displayDateStart = searchCriteria.dateStart.split("T")[0]
+  const displayDateEnd = searchCriteria.dateEnd.split("T")[0]
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <Card>
@@ -138,8 +150,9 @@ function PaymentSearchBox() {
           <CardDescription>You can search for a transaction by ID, Amount, or Date Range.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 items-end max-w-full">
-            <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
+          <div className="flex flex-wrap items-start gap-3 mb-3">
+            {/* Transaction Type */}
+            <div className="grid items-center gap-1.5 w-48 shrink-0">
               <Label htmlFor="transaction-type">Transaction Type</Label>
               <Select
                 value={searchCriteria.transactionType}
@@ -160,13 +173,14 @@ function PaymentSearchBox() {
                 </SelectContent>
               </Select>
               <div className="h-4">
-                {searchCriteria.transactionType ? (
+                {searchCriteria.transactionType && (
                   <span className="text-[10px] text-green-600">Type filter applied</span>
-                ) : null}
+                )}
               </div>
             </div>
 
-            <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
+            {/* Transaction ID */}
+            <div className="grid items-center gap-1.5 w-56 shrink-0">
               <Label htmlFor="transaction-id">Transaction ID</Label>
               <Input
                 type="text"
@@ -178,13 +192,14 @@ function PaymentSearchBox() {
                 disabled={isSearching}
               />
               <div className="h-4">
-                {!validId && searchCriteria.transactionId ? (
+                {!validId && searchCriteria.transactionId && (
                   <span className="text-[10px] text-muted-foreground">Enter a 16-character alphanumeric ID</span>
-                ) : null}
+                )}
               </div>
             </div>
 
-            <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
+            {/* Transaction Amount */}
+            <div className="grid items-center gap-1.5 w-44 shrink-0">
               <Label htmlFor="transaction-amount">Transaction Amount</Label>
               <Input
                 type="text"
@@ -196,71 +211,94 @@ function PaymentSearchBox() {
                 disabled={isSearching}
               />
               <div className="h-4">
-                {searchCriteria.transactionAmount.trim() !== "" ? (
+                {searchCriteria.transactionAmount.trim() !== "" && (
                   <span className="text-[10px] text-green-600">Amount search enabled</span>
-                ) : null}
+                )}
               </div>
             </div>
 
-            <div
-              className={`rounded-lg p-3 flex-grow transition-colors ${
-                isDefaultDates ? "bg-blue-50 dark:bg-blue-950/30" : "bg-transparent"
-              }`}
-            >
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
-                  <Label htmlFor="date-start">Date Range (Start)</Label>
-                  <Input
-                    type="date"
-                    id="date-start"
-                    value={searchCriteria.dateStart}
-                    onChange={(e) => handleInputChange("dateStart", e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    disabled={isSearching}
-                  />
-                </div>
-
-                <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
-                  <Label htmlFor="date-end">Date Range (End)</Label>
-                  <Input
-                    type="date"
-                    id="date-end"
-                    value={searchCriteria.dateEnd}
-                    onChange={(e) => handleInputChange("dateEnd", e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    disabled={isSearching}
-                  />
-                </div>
-              </div>
-              <div className="mt-2">
-                <span className="text-[10px] text-blue-600 dark:text-blue-400">Last 7 days (default)</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-end gap-2 flex-shrink-0 mt-4">
-            <Button
-              onClick={handleSearch}
-              disabled={!hasValidSearch || isSearching}
-              className="flex items-center gap-2"
-              size="default"
-            >
-              <Search className="h-4 w-4" />
-              {isSearching ? "Searching..." : "Search Transaction"}
-            </Button>
-
-            {hasAnyValue && (
-              <Button
-                onClick={handleClear}
-                variant="secondary"
+            {/* Date Range Start */}
+            <div className="grid items-center gap-1.5 w-44 shrink-0">
+              <Label htmlFor="date-start" className="whitespace-nowrap">
+                Date Range (Start)
+              </Label>
+              <Input
+                type="date"
+                id="date-start"
+                value={displayDateStart}
+                onChange={(e) => {
+                  const newValue = `${e.target.value}T00:00:00`
+                  handleInputChange("dateStart", newValue)
+                }}
+                onKeyPress={handleKeyPress}
                 disabled={isSearching}
+                className={
+                  isDefaultDates
+                    ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50 focus-visible:ring-blue-500"
+                    : ""
+                }
+              />
+              <div className="h-4 flex items-center">
+                {isDefaultDates && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-950"
+                  >
+                    Last 7 days (default)
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Date Range End */}
+            <div className="grid items-center gap-1.5 w-44 shrink-0">
+              <Label htmlFor="date-end" className="whitespace-nowrap">
+                Date Range (End)
+              </Label>
+              <Input
+                type="date"
+                id="date-end"
+                value={displayDateEnd}
+                onChange={(e) => {
+                  const newValue = `${e.target.value}T23:59:59`
+                  handleInputChange("dateEnd", newValue)
+                }}
+                onKeyPress={handleKeyPress}
+                disabled={isSearching}
+                className={
+                  isDefaultDates
+                    ? "bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50 focus-visible:ring-blue-500"
+                    : ""
+                }
+              />
+              <div className="h-4" />
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center gap-2 ml-auto mt-[22px]">
+              <Button
+                onClick={handleSearch}
+                disabled={!hasValidSearch || isSearching}
                 className="flex items-center gap-2"
                 size="default"
               >
-                <X className="h-4 w-4" />
-                Clear
+                <Search className="h-4 w-4" />
+                {isSearching ? "Searching..." : "Search Transaction"}
               </Button>
-            )}
+
+              {hasAnyValue && (
+                <Button
+                  onClick={handleClear}
+                  variant="secondary"
+                  disabled={isSearching}
+                  className="flex items-center gap-2"
+                  size="default"
+                >
+                  <X className="h-4 w-4" />
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
