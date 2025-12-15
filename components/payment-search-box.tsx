@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -22,23 +22,55 @@ interface SearchCriteria {
   dateEnd: string
 }
 
+function getDefaultDateRange() {
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - 7)
+
+  // Format as YYYY-MM-DD for input[type="date"]
+  const formatDate = (date: Date) => date.toISOString().split("T")[0]
+
+  return {
+    dateStart: formatDate(startDate),
+    dateEnd: formatDate(endDate),
+  }
+}
+
 function PaymentSearchBox() {
+  const defaultDates = getDefaultDateRange()
+
   const [searchCriteria, setSearchCriteria] = useState<SearchCriteria>({
     transactionType: "",
     transactionId: "",
     transactionAmount: "",
-    dateStart: "",
-    dateEnd: "",
+    dateStart: defaultDates.dateStart,
+    dateEnd: defaultDates.dateEnd,
   })
+
+  const [isDefaultDates, setIsDefaultDates] = useState(true)
 
   const queryClient = useQueryClient()
   const { searchByAll, clear: clearTx, isFetching: txFetching } = useTransactionSearchContext()
+
+  useEffect(() => {
+    setSearchCriteria((prev) => ({
+      ...prev,
+      dateStart: defaultDates.dateStart,
+      dateEnd: defaultDates.dateEnd,
+    }))
+  }, [])
 
   const handleInputChange = (field: keyof SearchCriteria, value: string) => {
     setSearchCriteria((prev) => ({
       ...prev,
       [field]: value,
     }))
+
+    if (field === "dateStart" || field === "dateEnd") {
+      const currentIsDefault =
+        searchCriteria.dateStart === defaultDates.dateStart && searchCriteria.dateEnd === defaultDates.dateEnd
+      setIsDefaultDates(currentIsDefault)
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -85,9 +117,10 @@ function PaymentSearchBox() {
       transactionType: "",
       transactionId: "",
       transactionAmount: "",
-      dateStart: "",
-      dateEnd: "",
+      dateStart: defaultDates.dateStart,
+      dateEnd: defaultDates.dateEnd,
     })
+    setIsDefaultDates(true)
 
     clearTx()
 
@@ -169,56 +202,65 @@ function PaymentSearchBox() {
               </div>
             </div>
 
-            <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
-              <Label htmlFor="date-start">Date Range (Start)</Label>
-              <Input
-                type="date"
-                id="date-start"
-                value={searchCriteria.dateStart}
-                onChange={(e) => handleInputChange("dateStart", e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={isSearching}
-              />
-              <div className="h-4" />
-            </div>
+            <div
+              className={`rounded-lg p-3 flex-grow transition-colors ${
+                isDefaultDates ? "bg-blue-50 dark:bg-blue-950/30" : "bg-transparent"
+              }`}
+            >
+              <div className="flex flex-wrap gap-4 items-end">
+                <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
+                  <Label htmlFor="date-start">Date Range (Start)</Label>
+                  <Input
+                    type="date"
+                    id="date-start"
+                    value={searchCriteria.dateStart}
+                    onChange={(e) => handleInputChange("dateStart", e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isSearching}
+                  />
+                </div>
 
-            <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
-              <Label htmlFor="date-end">Date Range (End)</Label>
-              <Input
-                type="date"
-                id="date-end"
-                value={searchCriteria.dateEnd}
-                onChange={(e) => handleInputChange("dateEnd", e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={isSearching}
-              />
-              <div className="h-4" />
+                <div className="grid items-center gap-1.5 w-56 md:w-64 lg:w-72 shrink-0">
+                  <Label htmlFor="date-end">Date Range (End)</Label>
+                  <Input
+                    type="date"
+                    id="date-end"
+                    value={searchCriteria.dateEnd}
+                    onChange={(e) => handleInputChange("dateEnd", e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isSearching}
+                  />
+                </div>
+              </div>
+              <div className="mt-2">
+                <span className="text-[10px] text-blue-600 dark:text-blue-400">Last 7 days (default)</span>
+              </div>
             </div>
+          </div>
 
-            <div className="flex items-end gap-2 flex-shrink-0">
+          <div className="flex items-end gap-2 flex-shrink-0 mt-4">
+            <Button
+              onClick={handleSearch}
+              disabled={!hasValidSearch || isSearching}
+              className="flex items-center gap-2"
+              size="default"
+            >
+              <Search className="h-4 w-4" />
+              {isSearching ? "Searching..." : "Search Transaction"}
+            </Button>
+
+            {hasAnyValue && (
               <Button
-                onClick={handleSearch}
-                disabled={!hasValidSearch || isSearching}
+                onClick={handleClear}
+                variant="secondary"
+                disabled={isSearching}
                 className="flex items-center gap-2"
                 size="default"
               >
-                <Search className="h-4 w-4" />
-                {isSearching ? "Searching..." : "Search Transaction"}
+                <X className="h-4 w-4" />
+                Clear
               </Button>
-
-              {hasAnyValue && (
-                <Button
-                  onClick={handleClear}
-                  variant="secondary"
-                  disabled={isSearching}
-                  className="flex items-center gap-2"
-                  size="default"
-                >
-                  <X className="h-4 w-4" />
-                  Clear
-                </Button>
-              )}
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
