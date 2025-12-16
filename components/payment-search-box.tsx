@@ -96,18 +96,17 @@ function PaymentSearchBox() {
   const hasValidSearch = useMemo(() => {
     const hasId = validId
     const hasAmount = searchCriteria.transactionAmount.trim() !== ""
-    const hasDateRange = searchCriteria.startdate || searchCriteria.enddate
-    const hasType = searchCriteria.transactionType !== ""
-    return hasId || hasAmount || hasDateRange || hasType
-  }, [
-    validId,
-    searchCriteria.transactionAmount,
-    searchCriteria.startdate,
-    searchCriteria.enddate,
-    searchCriteria.transactionType,
-  ])
+    // Search requires at least Transaction ID or Transaction Amount
+    // Date range and Type are optional filters but not sufficient alone
+    return hasId || hasAmount
+  }, [validId, searchCriteria.transactionAmount])
 
-  const hasAnyValue = useMemo(() => Object.values(searchCriteria).some((v) => v.trim() !== ""), [searchCriteria])
+  const hasAnyValue = useMemo(() => {
+    const hasId = searchCriteria.transactionId.trim() !== ""
+    const hasAmount = searchCriteria.transactionAmount.trim() !== ""
+    const hasType = searchCriteria.transactionType !== ""
+    return hasId || hasAmount || hasType
+  }, [searchCriteria.transactionId, searchCriteria.transactionAmount, searchCriteria.transactionType])
 
   const handleSearch = async () => {
     if (!hasValidSearch) return
