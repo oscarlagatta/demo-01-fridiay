@@ -19,8 +19,8 @@ interface SearchCriteria {
   transactionType: string
   transactionId: string
   transactionAmount: string
-  dateStart: string
-  dateEnd: string
+  startdate: string
+  enddate: string
 }
 
 function getDefaultDateRange() {
@@ -37,8 +37,8 @@ function getDefaultDateRange() {
   }
 
   return {
-    dateStart: formatDateWithTime(startDate, false),
-    dateEnd: formatDateWithTime(endDate, true),
+    startdate: formatDateWithTime(startDate, false),
+    enddate: formatDateWithTime(endDate, true),
   }
 }
 
@@ -49,8 +49,8 @@ function PaymentSearchBox() {
     transactionType: "",
     transactionId: "",
     transactionAmount: "",
-    dateStart: defaultDates.dateStart,
-    dateEnd: defaultDates.dateEnd,
+    startdate: defaultDates.startdate,
+    enddate: defaultDates.enddate,
   })
 
   const [isDefaultDates, setIsDefaultDates] = useState(true)
@@ -61,8 +61,8 @@ function PaymentSearchBox() {
   useEffect(() => {
     setSearchCriteria((prev) => ({
       ...prev,
-      dateStart: defaultDates.dateStart,
-      dateEnd: defaultDates.dateEnd,
+      startdate: defaultDates.startdate,
+      enddate: defaultDates.enddate,
     }))
   }, [])
 
@@ -72,11 +72,11 @@ function PaymentSearchBox() {
       [field]: value,
     }))
 
-    if (field === "dateStart" || field === "dateEnd") {
-      const currentDateStart = searchCriteria.dateStart.split("T")[0]
-      const currentDateEnd = searchCriteria.dateEnd.split("T")[0]
-      const defaultDateStart = defaultDates.dateStart.split("T")[0]
-      const defaultDateEnd = defaultDates.dateEnd.split("T")[0]
+    if (field === "startdate" || field === "enddate") {
+      const currentDateStart = searchCriteria.startdate.split("T")[0]
+      const currentDateEnd = searchCriteria.enddate.split("T")[0]
+      const defaultDateStart = defaultDates.startdate.split("T")[0]
+      const defaultDateEnd = defaultDates.enddate.split("T")[0]
       const currentIsDefault = currentDateStart === defaultDateStart && currentDateEnd === defaultDateEnd
       setIsDefaultDates(currentIsDefault)
     }
@@ -96,14 +96,14 @@ function PaymentSearchBox() {
   const hasValidSearch = useMemo(() => {
     const hasId = validId
     const hasAmount = searchCriteria.transactionAmount.trim() !== ""
-    const hasDateRange = searchCriteria.dateStart || searchCriteria.dateEnd
+    const hasDateRange = searchCriteria.startdate || searchCriteria.enddate
     const hasType = searchCriteria.transactionType !== ""
     return hasId || hasAmount || hasDateRange || hasType
   }, [
     validId,
     searchCriteria.transactionAmount,
-    searchCriteria.dateStart,
-    searchCriteria.dateEnd,
+    searchCriteria.startdate,
+    searchCriteria.enddate,
     searchCriteria.transactionType,
   ])
 
@@ -116,8 +116,8 @@ function PaymentSearchBox() {
       transactionType: searchCriteria.transactionType || undefined,
       transactionId: searchCriteria.transactionId.trim() || undefined,
       transactionAmount: searchCriteria.transactionAmount.trim() || undefined,
-      dateStart: searchCriteria.dateStart || undefined,
-      dateEnd: searchCriteria.dateEnd || undefined,
+      startdate: searchCriteria.startdate || undefined,
+      enddate: searchCriteria.enddate || undefined,
     })
   }
 
@@ -126,8 +126,8 @@ function PaymentSearchBox() {
       transactionType: "",
       transactionId: "",
       transactionAmount: "",
-      dateStart: defaultDates.dateStart,
-      dateEnd: defaultDates.dateEnd,
+      startdate: defaultDates.startdate,
+      enddate: defaultDates.enddate,
     })
     setIsDefaultDates(true)
 
@@ -139,8 +139,8 @@ function PaymentSearchBox() {
 
   const isSearching = txFetching
 
-  const displayDateStart = searchCriteria.dateStart.split("T")[0]
-  const displayDateEnd = searchCriteria.dateEnd.split("T")[0]
+  const displayDateStart = searchCriteria.startdate.split("T")[0]
+  const displayDateEnd = searchCriteria.enddate.split("T")[0]
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -228,7 +228,7 @@ function PaymentSearchBox() {
                 value={displayDateStart}
                 onChange={(e) => {
                   const newValue = `${e.target.value}T00:00:00`
-                  handleInputChange("dateStart", newValue)
+                  handleInputChange("startdate", newValue)
                 }}
                 onKeyPress={handleKeyPress}
                 disabled={isSearching}
@@ -261,7 +261,7 @@ function PaymentSearchBox() {
                 value={displayDateEnd}
                 onChange={(e) => {
                   const newValue = `${e.target.value}T23:59:59`
-                  handleInputChange("dateEnd", newValue)
+                  handleInputChange("enddate", newValue)
                 }}
                 onKeyPress={handleKeyPress}
                 disabled={isSearching}
