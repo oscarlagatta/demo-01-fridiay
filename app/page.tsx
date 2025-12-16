@@ -1,7 +1,7 @@
 "use client"
 
 import { FlowDiagram } from "../components/flow-diagram"
-import PaymentSearchBox from "../components/payment-search-box.tsx"
+import PaymentSearchBox from "../components/payment-search-box"
 import { TransactionSearchProvider } from "../components/transaction-search-provider"
 import { PaymentFlowLayout } from "../components/payment-flow-sidebar"
 import { GuidedTour } from "../components/guided-tour"
