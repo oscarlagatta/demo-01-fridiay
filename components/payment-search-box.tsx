@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, X, Calendar } from "lucide-react"
+import { Search, X, Calendar, Loader2 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useTransactionSearchContext } from "@/components/transaction-search-provider"
 import { useQueryClient } from "@tanstack/react-query"
@@ -75,7 +75,7 @@ function PaymentSearchBox() {
   const [activePreset, setActivePreset] = useState<DatePreset>("7days")
 
   const queryClient = useQueryClient()
-  const { searchByAll, clear: clearTx, isFetching: txFetching } = useTransactionSearchContext()
+  const { searchByAll, clear: clearTx, cancel, isFetching: txFetching } = useTransactionSearchContext()
 
   useEffect(() => {
     setSearchCriteria((prev) => ({
@@ -109,6 +109,9 @@ function PaymentSearchBox() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && hasValidSearch && !isSearching) {
       handleSearch()
+    }
+    if (e.key === "Escape" && isSearching) {
+      handleCancel()
     }
   }
 
@@ -158,10 +161,24 @@ function PaymentSearchBox() {
     await queryClient.refetchQueries({ queryKey: ["splunk-data"] })
   }
 
+  const handleCancel = () => {
+    cancel()
+  }
+
   const isSearching = txFetching
 
   const displayDateStart = searchCriteria.startdate.split("T")[0]
   const displayDateEnd = searchCriteria.enddate.split("T")[0]
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isSearching) {
+        handleCancel()
+      }
+    }
+    window.addEventListener("keydown", handleEscape)
+    return () => window.removeEventListener("keydown", handleEscape)
+  }, [isSearching])
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -319,15 +336,31 @@ function PaymentSearchBox() {
 
               {/* Buttons */}
               <div className="flex items-center gap-2 ml-auto mt-[22px]">
-                <Button
-                  onClick={handleSearch}
-                  disabled={!hasValidSearch || isSearching}
-                  className="flex items-center gap-2"
-                  size="default"
-                >
-                  <Search className="h-4 w-4" />
-                  {isSearching ? "Searching..." : "Search Transaction"}
-                </Button>
+                {isSearching ? (
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground animate-pulse">Searching...</span>
+                    <Button
+                      onClick={handleCancel}
+                      variant="destructive"
+                      className="flex items-center gap-2 min-w-[140px]"
+                      size="default"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Cancel Search
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleSearch}
+                    disabled={!hasValidSearch}
+                    className="flex items-center gap-2 min-w-[140px]"
+                    size="default"
+                  >
+                    <Search className="h-4 w-4" />
+                    Search Transaction
+                  </Button>
+                )}
+                {/* End of change */}
 
                 {hasAnyValue && (
                   <Button
@@ -343,6 +376,14 @@ function PaymentSearchBox() {
                 )}
               </div>
             </div>
+
+            {isSearching && (
+              <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+                <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-muted rounded border">ESC</kbd>
+                <span>to cancel</span>
+              </div>
+            )}
+            {/* End of change */}
           </div>
         </CardContent>
       </Card>

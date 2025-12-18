@@ -26,7 +26,7 @@ type TransactionSearchContextValue = {
   search: (id: string) => void
   searchByAll: (params: SearchParams) => void
   clear: () => void
-  // New: the set of AIT IDs that have data for the active transaction
+  cancel: () => void
   matchedAitIds: Set<string>
   showTableView: boolean
   selectedAitId: string | null
@@ -66,6 +66,13 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
     tx.reset()
   }, [tx])
 
+  const cancel = useCallback(() => {
+    tx.reset()
+    setShowTableView(false)
+    setSelectedAitId(null)
+    setIsTableLoading(false)
+  }, [tx])
+
   const active = useMemo(() => {
     const hasSearchParams = !!(
       tx.searchParams.transactionId ||
@@ -80,10 +87,8 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
     setIsTableLoading(true)
     setSelectedAitId(aitId)
 
-    // Use requestAnimationFrame to ensure smooth transition
     requestAnimationFrame(() => {
       setShowTableView(true)
-      // Small delay to allow table to render before removing loading state
       setTimeout(() => {
         setIsTableLoading(false)
       }, 100)
@@ -129,6 +134,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
       search,
       searchByAll,
       clear,
+      cancel,
       matchedAitIds,
       showTableView,
       selectedAitId,
@@ -142,6 +148,7 @@ export function TransactionSearchProvider({ children }: { children: React.ReactN
     search,
     searchByAll,
     clear,
+    cancel,
     matchedAitIds,
     showTableView,
     selectedAitId,

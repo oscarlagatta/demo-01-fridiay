@@ -10,7 +10,7 @@
  * - Handles data mapping between new API structure and legacy TransactionSummary format
  */
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useRef, useCallback } from "react"
 import {
   useGetSplunkUsWiresTransactionDetails,
   useGetSplunkUsWiresTransactionDetailsByAmount,
@@ -157,6 +157,7 @@ function transformApiResponse(
 
 export function useTransactionSearch(defaultParams: SearchParams = {}) {
   const [searchParams, setSearchParams] = useState<SearchParams>(defaultParams)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const enabled = useMemo(() => {
     const hasValidId = searchParams.transactionId && ID_REGEX.test(searchParams.transactionId)
@@ -228,26 +229,33 @@ export function useTransactionSearch(defaultParams: SearchParams = {}) {
 
   const notFound = useMemo(() => query.error?.status === 404, [query.error])
 
-  function searchById(transactionId: string) {
+  const searchById = useCallback((transactionId: string) => {
+    abortControllerRef.current = new AbortController()
     setSearchParams({ transactionId: transactionId.toUpperCase() })
-  }
+  }, [])
 
-  function searchByDateRange(dateStart?: string, dateEnd?: string) {
+  const searchByDateRange = useCallback((dateStart?: string, dateEnd?: string) => {
+    abortControllerRef.current = new AbortController()
     setSearchParams({ dateStart, dateEnd })
-  }
+  }, [])
 
-  function searchByAll(params: SearchParams) {
+  const searchByAll = useCallback((params: SearchParams) => {
+    abortControllerRef.current = new AbortController()
     setSearchParams({
       transactionId: params.transactionId?.toUpperCase(),
       transactionAmount: params.transactionAmount,
       dateStart: params.dateStart,
       dateEnd: params.dateEnd,
     })
-  }
+  }, [])
 
-  function reset() {
+  const reset = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
     setSearchParams({})
-  }
+  }, [])
 
   const results: SplunkTransactionDetails | undefined = query.data?.results
   const summary: TransactionSummary | undefined = query.data?.summary
