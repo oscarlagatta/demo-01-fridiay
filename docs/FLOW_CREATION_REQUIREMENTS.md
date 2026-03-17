@@ -57,7 +57,7 @@ This document outlines the requirements for a user-guided flow creation system t
 
 ### 4.1 Flow Generation Logic
 
-```
+\`\`\`
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              FLOW CANVAS                                     │
 │                                                                             │
@@ -79,7 +79,7 @@ This document outlines the requirements for a user-guided flow creation system t
 │  └──────────┘      └──────────┘       └──────────┘       └──────────┘      │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
-```
+\`\`\`
 
 ### 4.2 Auto-Positioning Algorithm
 
@@ -132,12 +132,12 @@ The UI should present a step-by-step guided process:
 - Names should be unique within the flow
 
 **Example**:
-```
+\`\`\`
 Section 1 Header: [Origination          ]
 Section 2 Header: [Processing           ]
 Section 3 Header: [Clearing             ]
 Section 4 Header: [Settlement           ]
-```
+\`\`\`
 
 ---
 
@@ -189,11 +189,11 @@ Section 4 Header: [Settlement           ]
 - Warning for nodes without any connections
 
 **Example**:
-```
+\`\`\`
 Connection 1: [Node: APP001 - Gateway] ──► [Node: APP002 - Processor]
 Connection 2: [Node: APP002 - Processor] ──► [Node: APP003 - Clearing]
 [+ Add Connection]
-```
+\`\`\`
 
 ---
 
@@ -210,7 +210,7 @@ Connection 2: [Node: APP002 - Processor] ──► [Node: APP003 - Clearing]
 - "Back" button to make changes
 
 **Summary Display**:
-```
+\`\`\`
 ┌─────────────────────────────────────────┐
 │ Flow Configuration Summary              │
 ├─────────────────────────────────────────┤
@@ -227,7 +227,7 @@ Connection 2: [Node: APP002 - Processor] ──► [Node: APP003 - Clearing]
 │                                         │
 │ [Back]              [Generate Flow]     │
 └─────────────────────────────────────────┘
-```
+\`\`\`
 
 ---
 
@@ -256,9 +256,9 @@ Connection 2: [Node: APP002 - Processor] ──► [Node: APP003 - Clearing]
 
 ### 6.1 Data Flow
 
-```
+\`\`\`
 User Input → Validation → Position Calculation → Database Insert → Flow Render
-```
+\`\`\`
 
 ### 6.2 CRUD Operations
 
@@ -382,7 +382,7 @@ The following features are not included in the initial release but may be consid
 
 ### 10.1 Recommended Component Structure
 
-```
+\`\`\`
 /app/flow-builder/
   page.tsx                    # Main wizard page
   
@@ -404,13 +404,13 @@ The following features are not included in the initial release but may be consid
 
 /types/
   flow-builder.ts             # TypeScript interfaces
-```
+\`\`\`
 
 ### 10.2 State Management
 
 The wizard should maintain state across all steps:
 
-```typescript
+\`\`\`typescript
 interface FlowBuilderState {
   currentStep: 1 | 2 | 3 | 4 | 5 | 6;
   region: string | null;
@@ -439,7 +439,7 @@ interface FlowConnection {
   fromNodeId: string;
   toNodeId: string;
 }
-```
+\`\`\`
 
 ---
 
@@ -447,7 +447,7 @@ interface FlowConnection {
 
 ### A. Section Position Constants
 
-```typescript
+\`\`\`typescript
 const SECTION_POSITIONS = {
   SECTION_1_X: 50,
   SECTION_2_X: 450,
@@ -462,20 +462,20 @@ const SECTION_POSITIONS = {
   NODE_GAP_Y: 26,
   SECTION_GAP_X: 106,
 };
-```
+\`\`\`
 
 ### B. Y Position Calculator
 
-```typescript
+\`\`\`typescript
 function calculateYPosition(orderInSection: number): number {
   const { FIRST_NODE_Y, NODE_HEIGHT, NODE_GAP_Y } = SECTION_POSITIONS;
   return FIRST_NODE_Y + (NODE_HEIGHT + NODE_GAP_Y) * orderInSection;
 }
-```
+\`\`\`
 
 ### C. X Position Calculator
 
-```typescript
+\`\`\`typescript
 function calculateXPosition(sectionIndex: number): number {
   const positions = [
     SECTION_POSITIONS.SECTION_1_X,
@@ -485,7 +485,7 @@ function calculateXPosition(sectionIndex: number): number {
   ];
   return positions[sectionIndex] || positions[0];
 }
-```
+\`\`\`
 
 ---
 
