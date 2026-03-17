@@ -1,170 +1,43 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import Joyride, { type CallBackProps, STATUS, type Step } from "react-joyride"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { HelpCircle, RotateCcw } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { HelpCircle, RotateCcw, X, ChevronLeft, ChevronRight } from "lucide-react"
 
-// Tour steps configuration
-const tourSteps: Step[] = [
+interface TourStep {
+  target: string
+  title: string
+  content: string
+  placement: "top" | "bottom" | "left" | "right"
+}
+
+const tourSteps: TourStep[] = [
   {
     target: '[data-tour="dashboard-title"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Welcome to Payment Dashboard!</h3>
-        <p>
-          This is your central hub for monitoring payment flows and transactions. Let's take a quick tour of the key
-          features.
-        </p>
-      </div>
-    ),
+    title: "Welcome to Payment Dashboard!",
+    content: "This is your central hub for monitoring payment flows and transactions. Let's take a quick tour of the key features.",
     placement: "bottom",
-    disableBeacon: true,
-    isFixed: true,
   },
   {
     target: '[data-tour="search-box"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Payment Search</h3>
-        <p>
-          Use this search box to quickly find specific transactions, payments, or flow data. You can search by
-          transaction ID, amount, or other criteria.
-        </p>
-      </div>
-    ),
+    title: "Payment Search",
+    content: "Use this search box to quickly find specific transactions, payments, or flow data. You can search by transaction ID, amount, or other criteria.",
     placement: "bottom",
-    isFixed: true,
-  },
-  {
-    target: '[data-tour="sidebar-navigation"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Navigation Sidebar</h3>
-        <p>
-          This sidebar contains all the main navigation options. You can access different payment flows, analytics, and
-          system management features from here.
-        </p>
-      </div>
-    ),
-    placement: "right",
-    isFixed: true,
-  },
-  {
-    target: '[data-tour="view-mode-toggle"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">View Mode Toggle</h3>
-        <p>
-          Switch between <strong>Track</strong> mode for transaction tracking and <strong>Monitor</strong> mode for
-          observability and monitoring features.
-        </p>
-      </div>
-    ),
-    placement: "right",
-    isFixed: true,
-  },
-  {
-    target: '[data-tour="flow-diagrams"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Flow Diagrams</h3>
-        <p>
-          Select different payment flows like US Wires, International Wires, or regional payment systems. Each flow
-          shows detailed monitoring and tracking information.
-        </p>
-      </div>
-    ),
-    placement: "right",
-    isFixed: true,
-  },
-  {
-    target: '[data-tour="main-diagram"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Main Diagram Area</h3>
-        <p>
-          This is where the selected payment flow diagram is displayed. You can interact with nodes, view transaction
-          details, and monitor real-time data.
-        </p>
-      </div>
-    ),
-    placement: "top",
-    isFixed: true,
   },
   {
     target: '[data-tour="node-manager"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Node Manager</h3>
-        <p>
-          Access the Node Manager to configure and manage payment processing nodes, connections, and system settings.
-        </p>
-      </div>
-    ),
+    title: "Node Manager",
+    content: "Access the Node Manager to configure and manage payment processing nodes, connections, and system settings.",
     placement: "bottom",
-    isFixed: true,
   },
   {
-    target: '[data-tour="testing-panel"]',
-    content: (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Testing Panel</h3>
-        <p>
-          Use this panel to test payment flows, simulate transactions, and validate system configurations before going
-          live.
-        </p>
-      </div>
-    ),
+    target: '[data-tour="main-diagram"]',
+    title: "Main Diagram Area",
+    content: "This is where the selected payment flow diagram is displayed. You can interact with nodes, view transaction details, and monitor real-time data.",
     placement: "top",
-    isFixed: true,
   },
 ]
-
-// Custom tour styles
-const tourStyles = {
-  options: {
-    primaryColor: "#1d4ed8",
-    textColor: "#374151",
-    backgroundColor: "#ffffff",
-    overlayColor: "rgba(0, 0, 0, 0.4)",
-    spotlightShadow: "0 0 15px rgba(0, 0, 0, 0.5)",
-    beaconSize: 36,
-    zIndex: 10000,
-  },
-  tooltip: {
-    borderRadius: 8,
-    fontSize: 14,
-    padding: 20,
-  },
-  tooltipContainer: {
-    textAlign: "left" as const,
-  },
-  tooltipTitle: {
-    fontSize: 18,
-    fontWeight: 600,
-    marginBottom: 8,
-  },
-  buttonNext: {
-    backgroundColor: "#1d4ed8",
-    borderRadius: 6,
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: 500,
-    padding: "8px 16px",
-  },
-  buttonBack: {
-    color: "#6b7280",
-    fontSize: 14,
-    fontWeight: 500,
-    marginRight: 10,
-  },
-  buttonSkip: {
-    color: "#6b7280",
-    fontSize: 14,
-    fontWeight: 500,
-  },
-}
 
 interface GuidedTourProps {
   autoStart?: boolean
@@ -175,52 +48,95 @@ export function GuidedTour({ autoStart = false, onTourComplete }: GuidedTourProp
   const [run, setRun] = useState(false)
   const [stepIndex, setStepIndex] = useState(0)
   const [tourCompleted, setTourCompleted] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
 
-  // Check if user has completed the tour before
   useEffect(() => {
     const hasCompletedTour = localStorage.getItem("payment-dashboard-tour-completed")
     setTourCompleted(hasCompletedTour === "true")
 
-    // Auto-start tour for new users
     if (autoStart && !hasCompletedTour) {
-      setTimeout(() => setRun(true), 1000) // Delay to ensure DOM is ready
+      setTimeout(() => setRun(true), 1000)
     }
   }, [autoStart])
 
+  const updateTooltipPosition = useCallback(() => {
+    if (!run) return
+
+    const currentStep = tourSteps[stepIndex]
+    const targetElement = document.querySelector(currentStep.target)
+
+    if (targetElement) {
+      const rect = targetElement.getBoundingClientRect()
+      const scrollTop = window.scrollY
+      const scrollLeft = window.scrollX
+
+      let top = 0
+      let left = 0
+
+      switch (currentStep.placement) {
+        case "bottom":
+          top = rect.bottom + scrollTop + 12
+          left = rect.left + scrollLeft + rect.width / 2 - 175
+          break
+        case "top":
+          top = rect.top + scrollTop - 12 - 150
+          left = rect.left + scrollLeft + rect.width / 2 - 175
+          break
+        case "left":
+          top = rect.top + scrollTop + rect.height / 2 - 75
+          left = rect.left + scrollLeft - 362
+          break
+        case "right":
+          top = rect.top + scrollTop + rect.height / 2 - 75
+          left = rect.right + scrollLeft + 12
+          break
+      }
+
+      // Keep tooltip within viewport
+      left = Math.max(16, Math.min(left, window.innerWidth - 366))
+      top = Math.max(16, top)
+
+      setTooltipPosition({ top, left })
+
+      // Scroll target into view if needed
+      targetElement.scrollIntoView({ behavior: "smooth", block: "center" })
+    }
+  }, [run, stepIndex])
+
   useEffect(() => {
-    if (run) {
-      // Prevent body scrolling when tour is active
-      document.body.style.overflow = "hidden"
-      document.body.style.position = "fixed"
-      document.body.style.width = "100%"
-    } else {
-      // Restore body scrolling when tour is inactive
-      document.body.style.overflow = ""
-      document.body.style.position = ""
-      document.body.style.width = ""
-    }
+    updateTooltipPosition()
+    window.addEventListener("resize", updateTooltipPosition)
+    window.addEventListener("scroll", updateTooltipPosition)
 
-    // Cleanup on unmount
     return () => {
-      document.body.style.overflow = ""
-      document.body.style.position = ""
-      document.body.style.width = ""
+      window.removeEventListener("resize", updateTooltipPosition)
+      window.removeEventListener("scroll", updateTooltipPosition)
     }
-  }, [run])
+  }, [updateTooltipPosition])
 
-  const handleJoyrideCallback = (data: CallBackProps) => {
-    const { status, type, index } = data
-
-    if (type === "step:after") {
-      setStepIndex(index + 1)
+  const handleNext = () => {
+    if (stepIndex < tourSteps.length - 1) {
+      setStepIndex(stepIndex + 1)
+    } else {
+      finishTour()
     }
+  }
 
-    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
-      setRun(false)
-      setTourCompleted(true)
-      localStorage.setItem("payment-dashboard-tour-completed", "true")
-      onTourComplete?.()
+  const handleBack = () => {
+    if (stepIndex > 0) {
+      setStepIndex(stepIndex - 1)
     }
+  }
+
+  const finishTour = () => {
+    setRun(false)
+    setTourCompleted(true)
+    localStorage.setItem("payment-dashboard-tour-completed", "true")
+    onTourComplete?.()
+  }
+
+  const skipTour = () => {
+    finishTour()
   }
 
   const startTour = () => {
@@ -235,37 +151,69 @@ export function GuidedTour({ autoStart = false, onTourComplete }: GuidedTourProp
     setStepIndex(0)
   }
 
+  const currentStep = tourSteps[stepIndex]
+
   return (
     <>
-      <Joyride
-        steps={tourSteps}
-        run={run}
-        stepIndex={stepIndex}
-        callback={handleJoyrideCallback}
-        continuous
-        showProgress
-        showSkipButton
-        styles={tourStyles}
-        disableScrolling={true}
-        disableScrollParentFix={true}
-        spotlightClicks={false}
-        disableOverlayClose={false}
-        locale={{
-          back: "Back",
-          close: "Close",
-          last: "Finish Tour",
-          next: "Next",
-          skip: "Skip Tour",
-        }}
-        floaterProps={{
-          disableAnimation: false,
-          options: {
-            preventOverflow: {
-              boundariesElement: "viewport",
-            },
-          },
-        }}
-      />
+      {/* Overlay */}
+      {run && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-[9998]"
+          onClick={skipTour}
+        />
+      )}
+
+      {/* Tooltip */}
+      {run && (
+        <Card
+          className="fixed z-[9999] w-[350px] shadow-xl"
+          style={{
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+          }}
+        >
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-foreground">{currentStep.title}</h3>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={skipTour}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">{currentStep.content}</p>
+            
+            {/* Progress dots */}
+            <div className="flex items-center justify-center gap-1 mb-4">
+              {tourSteps.map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    i === stepIndex ? "bg-primary" : "bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" size="sm" onClick={skipTour}>
+                Skip Tour
+              </Button>
+              <div className="flex gap-2">
+                {stepIndex > 0 && (
+                  <Button variant="outline" size="sm" onClick={handleBack}>
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Back
+                  </Button>
+                )}
+                <Button size="sm" onClick={handleNext}>
+                  {stepIndex === tourSteps.length - 1 ? "Finish" : "Next"}
+                  {stepIndex < tourSteps.length - 1 && <ChevronRight className="h-4 w-4 ml-1" />}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tour Control Buttons */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
@@ -274,19 +222,19 @@ export function GuidedTour({ autoStart = false, onTourComplete }: GuidedTourProp
             onClick={startTour}
             variant="outline"
             size="sm"
-            className="bg-white shadow-lg border-gray-200 hover:bg-gray-50"
+            className="bg-background shadow-lg border-border hover:bg-accent"
           >
             <HelpCircle className="w-4 h-4 mr-2" />
             {tourCompleted ? "Retake Tour" : "Start Tour"}
           </Button>
         )}
 
-        {tourCompleted && (
+        {tourCompleted && !run && (
           <Button
             onClick={resetTour}
             variant="ghost"
             size="sm"
-            className="bg-white shadow-lg border border-gray-200 hover:bg-gray-50"
+            className="bg-background shadow-lg border border-border hover:bg-accent"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset Tour
@@ -339,13 +287,13 @@ export function useTour() {
 // Tour progress indicator component
 export function TourProgress({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) {
   return (
-    <div className="flex items-center gap-2 text-sm text-gray-600">
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <span>
         Step {currentStep + 1} of {totalSteps}
       </span>
       <div className="flex gap-1">
         {Array.from({ length: totalSteps }, (_, i) => (
-          <div key={i} className={`w-2 h-2 rounded-full ${i <= currentStep ? "bg-blue-600" : "bg-gray-300"}`} />
+          <div key={i} className={`w-2 h-2 rounded-full ${i <= currentStep ? "bg-primary" : "bg-muted"}`} />
         ))}
       </div>
     </div>
