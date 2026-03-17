@@ -22,11 +22,14 @@ import {
   CircleDollarSign,
   Search,
   Activity,
+  Plus,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { TransactionSearchProvider } from "@/components/transaction-search-provider"
 import { USWiresToggleContent } from "@/components/us-wires-toggle-content"
+import { FlowBuilderWizard } from "@/components/flow-builder-mockup"
 
 const mainPageItems = [
   { id: "analytics", title: "Analytics", subtitle: "Payment insights and reports", Icon: BarChart3 },
@@ -249,6 +252,7 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
   const [selectedSubItem, setSelectedSubItem] = useState("us-wires") // Set us-wires as default
   const [secondarySidebarCollapsed, setSecondarySidebarCollapsed] = useState(false)
   const [usWiresMode, setUSWiresMode] = useState<"track-trace" | "observability">("track-trace")
+  const [isFlowBuilderOpen, setIsFlowBuilderOpen] = useState(false)
 
   const renderContent = () => {
     switch (selectedSubItem) {
@@ -364,9 +368,41 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
             usWiresMode={usWiresMode}
             onUSWiresModeChange={setUSWiresMode}
           />
+          
+          {/* Flow Builder Button - Fixed at bottom of sidebar */}
+          {selectedMainItem === "e2e-monitor" && (
+            <div className={cn(
+              "border-t border-border p-4 bg-white",
+              secondarySidebarCollapsed ? "w-16" : "w-64"
+            )}>
+              <Button
+                onClick={() => setIsFlowBuilderOpen(true)}
+                className={cn(
+                  "w-full bg-green-600 hover:bg-green-700 text-white",
+                  secondarySidebarCollapsed && "p-2"
+                )}
+                title="Create New Flow"
+              >
+                <Plus className="h-4 w-4" />
+                {!secondarySidebarCollapsed && <span className="ml-2">Create Flow</span>}
+              </Button>
+            </div>
+          )}
         </div>
         <main className="bg-background flex flex-1 flex-col">{renderContent()}</main>
       </div>
+
+      {/* Flow Builder Dialog */}
+      <Dialog open={isFlowBuilderOpen} onOpenChange={setIsFlowBuilderOpen}>
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle>Flow Builder</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto p-0">
+            <FlowBuilderWizard />
+          </div>
+        </DialogContent>
+      </Dialog>
     </TransactionSearchProvider>
   )
 }
