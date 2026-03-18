@@ -15,13 +15,13 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { FlowNode, FlowConnection, SECTION_POSITIONS, REGIONS } from './types';
+import { FlowNode, FlowConnection, SECTION_POSITIONS, REGIONS, getSectionXPosition, getCanvasWidth } from './types';
 import { getNodesBySection } from './mock-data';
 import { cn } from '@/lib/utils';
 
 interface FlowPreviewProps {
   region: string | null;
-  sectionHeaders: [string, string, string, string];
+  sectionHeaders: string[];
   nodes: FlowNode[];
   connections: FlowConnection[];
   onEditConfiguration: () => void;
@@ -54,14 +54,16 @@ export function FlowPreview({
     setZoomLevel(100);
   }, []);
 
-  // Calculate canvas dimensions based on nodes
+  // Calculate canvas dimensions based on nodes and section count
   const canvasDimensions = useMemo(() => {
-    const maxY = Math.max(...nodes.map((n) => (n.yPosition || 0) + SECTION_POSITIONS.NODE_HEIGHT));
+    const maxY = nodes.length > 0 
+      ? Math.max(...nodes.map((n) => (n.yPosition || 0) + SECTION_POSITIONS.NODE_HEIGHT))
+      : SECTION_POSITIONS.FIRST_NODE_Y + SECTION_POSITIONS.NODE_HEIGHT;
     return {
-      width: SECTION_POSITIONS.SECTION_4_X + SECTION_POSITIONS.NODE_WIDTH + 100,
+      width: getCanvasWidth(sectionHeaders.length),
       height: Math.max(maxY + 100, 600),
     };
-  }, [nodes]);
+  }, [nodes, sectionHeaders.length]);
 
   // Generate SVG paths for connections
   const connectionPaths = useMemo(() => {
@@ -121,7 +123,7 @@ export function FlowPreview({
       </div>
 
       {/* Statistics Bar */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -147,22 +149,22 @@ export function FlowPreview({
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <ExternalLink className="h-5 w-5 text-primary" />
+              <span className="text-lg font-bold text-primary">{sectionHeaders.length}</span>
             </div>
             <div>
-              <p className="text-2xl font-bold">{nodes.filter((n) => n.type === 'External').length}</p>
-              <p className="text-xs text-muted-foreground">External Nodes</p>
+              <p className="text-2xl font-bold">Sections</p>
+              <p className="text-xs text-muted-foreground">{regionData?.name || 'N/A'}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <span className="text-lg font-bold text-primary">4</span>
+              <ExternalLink className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{regionData?.name || 'N/A'}</p>
-              <p className="text-xs text-muted-foreground">Region</p>
+              <p className="text-2xl font-bold">{nodes.filter((n) => n.type === 'External').length}</p>
+              <p className="text-xs text-muted-foreground">External Nodes</p>
             </div>
           </div>
         </Card>
@@ -225,13 +227,7 @@ export function FlowPreview({
               >
               {/* Section Headers */}
               {sectionHeaders.map((header, index) => {
-                const positions = [
-                  SECTION_POSITIONS.SECTION_1_X,
-                  SECTION_POSITIONS.SECTION_2_X,
-                  SECTION_POSITIONS.SECTION_3_X,
-                  SECTION_POSITIONS.SECTION_4_X,
-                ];
-                const x = positions[index];
+                const x = getSectionXPosition(index);
 
                 return (
                   <g key={`header-${index}`}>

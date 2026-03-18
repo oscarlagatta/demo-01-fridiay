@@ -17,7 +17,7 @@ import { getNodesBySection } from './mock-data';
 
 interface StepReviewSummaryProps {
   region: string | null;
-  sectionHeaders: [string, string, string, string];
+  sectionHeaders: string[];
   nodes: FlowNode[];
   connections: FlowConnection[];
 }

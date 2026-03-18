@@ -11,7 +11,7 @@ import { StepNodeConfiguration } from './step-node-configuration';
 import { StepConnectionBuilder } from './step-connection-builder';
 import { StepReviewSummary } from './step-review-summary';
 import { FlowPreview } from './flow-preview';
-import { FlowBuilderState, FlowNode, FlowConnection, RegionId, Region, SECTION_POSITIONS } from './types';
+import { FlowBuilderState, FlowNode, FlowConnection, RegionId, Region, SECTION_POSITIONS, getSectionXPosition, generateDefaultHeaders, DEFAULT_SECTION_COUNT } from './types';
 import { INITIAL_STATE, MOCK_SECTION_HEADERS, MOCK_NODES, MOCK_CONNECTIONS } from './mock-data';
 
 const STEP_LABELS = [
@@ -31,15 +31,8 @@ function calculateNodePosition(
   sectionIndex: number,
   orderInSection: number
 ): { xPosition: number; yPosition: number } {
-  const positions = [
-    SECTION_POSITIONS.SECTION_1_X,
-    SECTION_POSITIONS.SECTION_2_X,
-    SECTION_POSITIONS.SECTION_3_X,
-    SECTION_POSITIONS.SECTION_4_X,
-  ];
-
   return {
-    xPosition: positions[sectionIndex] || positions[0],
+    xPosition: getSectionXPosition(sectionIndex),
     yPosition:
       SECTION_POSITIONS.FIRST_NODE_Y +
       (SECTION_POSITIONS.NODE_HEIGHT + SECTION_POSITIONS.NODE_GAP_Y) * orderInSection,
@@ -56,6 +49,7 @@ export function FlowBuilderWizard({ useMockData = false }: FlowBuilderWizardProp
       return {
         currentStep: 1,
         region: 'US',
+        sectionCount: 4,
         sectionHeaders: MOCK_SECTION_HEADERS,
         nodes: MOCK_NODES,
         connections: MOCK_CONNECTIONS,
@@ -79,9 +73,46 @@ export function FlowBuilderWizard({ useMockData = false }: FlowBuilderWizardProp
     setState((prev) => ({ ...prev, region: regionId }));
   };
 
+  const handleSectionCountChange = useCallback((newCount: number) => {
+    setState((prev) => {
+      // Generate new headers array with the new count
+      const currentHeaders = prev.sectionHeaders;
+      let newHeaders: string[];
+      
+      if (newCount > prev.sectionCount) {
+        // Adding sections - keep existing and add defaults
+        const defaultNames = generateDefaultHeaders(newCount);
+        newHeaders = [
+          ...currentHeaders,
+          ...defaultNames.slice(prev.sectionCount, newCount),
+        ];
+      } else {
+        // Removing sections - keep first n headers
+        newHeaders = currentHeaders.slice(0, newCount);
+      }
+
+      // Remove nodes that are in sections that no longer exist
+      const filteredNodes = prev.nodes.filter((node) => node.sectionIndex < newCount);
+      
+      // Remove connections that reference removed nodes
+      const validNodeIds = new Set(filteredNodes.map((n) => n.id));
+      const filteredConnections = prev.connections.filter(
+        (c) => validNodeIds.has(c.fromNodeId) && validNodeIds.has(c.toNodeId)
+      );
+
+      return {
+        ...prev,
+        sectionCount: newCount,
+        sectionHeaders: newHeaders,
+        nodes: filteredNodes,
+        connections: filteredConnections,
+      };
+    });
+  }, []);
+
   const handleHeaderChange = (index: number, value: string) => {
     setState((prev) => {
-      const newHeaders = [...prev.sectionHeaders] as [string, string, string, string];
+      const newHeaders = [...prev.sectionHeaders];
       newHeaders[index] = value;
       return { ...prev, sectionHeaders: newHeaders };
     });
@@ -184,7 +215,9 @@ export function FlowBuilderWizard({ useMockData = false }: FlowBuilderWizardProp
       case 2:
         return (
           <StepSectionHeaders
+            sectionCount={state.sectionCount}
             sectionHeaders={state.sectionHeaders}
+            onSectionCountChange={handleSectionCountChange}
             onHeaderChange={handleHeaderChange}
           />
         );
