@@ -394,8 +394,8 @@ export function PaymentFlowLayout({ children }: { children: React.ReactNode }) {
 
       {/* Flow Builder Dialog */}
       <Dialog open={isFlowBuilderOpen} onOpenChange={setIsFlowBuilderOpen}>
-        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden">
-          <DialogHeader className="px-6 py-4 border-b">
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0 overflow-hidden top-[5vh] translate-y-0 flex flex-col">
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
             <DialogTitle>Flow Builder</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-auto p-0">
