@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,24 @@ export function FlowPreview({
   onEditConfiguration,
 }: FlowPreviewProps) {
   const regionData = REGIONS.find((r) => r.id === region);
+  
+  // Zoom state with min 25%, max 200%, step 25%
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const ZOOM_MIN = 25;
+  const ZOOM_MAX = 200;
+  const ZOOM_STEP = 25;
+
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel((prev) => Math.min(prev + ZOOM_STEP, ZOOM_MAX));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel((prev) => Math.max(prev - ZOOM_STEP, ZOOM_MIN));
+  }, []);
+
+  const handleResetZoom = useCallback(() => {
+    setZoomLevel(100);
+  }, []);
 
   // Calculate canvas dimensions based on nodes
   const canvasDimensions = useMemo(() => {
@@ -160,22 +178,51 @@ export function FlowPreview({
             </CardDescription>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={handleZoomOut}
+              disabled={zoomLevel <= ZOOM_MIN}
+              title="Zoom Out"
+            >
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <span className="text-sm text-muted-foreground">100%</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <button 
+              onClick={handleResetZoom}
+              className="min-w-[50px] text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="Reset to 100%"
+            >
+              {zoomLevel}%
+            </button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={handleZoomIn}
+              disabled={zoomLevel >= ZOOM_MAX}
+              title="Zoom In"
+            >
               <ZoomIn className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-auto rounded-lg border bg-muted/30">
-            <svg
-              width={canvasDimensions.width}
-              height={canvasDimensions.height}
-              className="min-w-full"
+            <div
+              style={{
+                transform: `scale(${zoomLevel / 100})`,
+                transformOrigin: 'top left',
+                width: canvasDimensions.width,
+                height: canvasDimensions.height,
+                transition: 'transform 0.2s ease-out',
+              }}
             >
+              <svg
+                width={canvasDimensions.width}
+                height={canvasDimensions.height}
+                className="min-w-full"
+              >
               {/* Section Headers */}
               {sectionHeaders.map((header, index) => {
                 const positions = [
@@ -363,6 +410,7 @@ export function FlowPreview({
                 );
               })}
             </svg>
+            </div>
           </div>
         </CardContent>
       </Card>
