@@ -53,10 +53,20 @@ export const SECTION_POSITIONS: SectionPosition = {
   SECTION_GAP_X: 106,
 };
 
-export const REGIONS = [
+export interface Region {
+  id: string;
+  name: string;
+  description: string;
+  isCustom?: boolean;
+}
+
+export const DEFAULT_REGIONS: Region[] = [
   { id: 'US', name: 'United States', description: 'US Wire Transfer Flow' },
   { id: 'INDIA', name: 'India', description: 'India Payment Flow' },
   { id: 'APAC', name: 'Asia Pacific', description: 'APAC Regional Flow' },
-] as const;
+];
 
-export type RegionId = typeof REGIONS[number]['id'];
+// Keep for backward compatibility
+export const REGIONS = DEFAULT_REGIONS;
+
+export type RegionId = string;

@@ -11,7 +11,7 @@ import { StepNodeConfiguration } from './step-node-configuration';
 import { StepConnectionBuilder } from './step-connection-builder';
 import { StepReviewSummary } from './step-review-summary';
 import { FlowPreview } from './flow-preview';
-import { FlowBuilderState, FlowNode, FlowConnection, RegionId, SECTION_POSITIONS } from './types';
+import { FlowBuilderState, FlowNode, FlowConnection, RegionId, Region, SECTION_POSITIONS } from './types';
 import { INITIAL_STATE, MOCK_SECTION_HEADERS, MOCK_NODES, MOCK_CONNECTIONS } from './mock-data';
 
 const STEP_LABELS = [
@@ -64,6 +64,12 @@ export function FlowBuilderWizard({ useMockData = false }: FlowBuilderWizardProp
     }
     return INITIAL_STATE;
   });
+
+  const [customRegions, setCustomRegions] = useState<Region[]>([]);
+
+  const handleAddCustomRegion = useCallback((region: Region) => {
+    setCustomRegions((prev) => [...prev, region]);
+  }, []);
 
   const setCurrentStep = (step: FlowBuilderState['currentStep']) => {
     setState((prev) => ({ ...prev, currentStep: step }));
@@ -171,6 +177,8 @@ export function FlowBuilderWizard({ useMockData = false }: FlowBuilderWizardProp
           <StepRegionSelector
             selectedRegion={state.region}
             onRegionSelect={handleRegionSelect}
+            customRegions={customRegions}
+            onAddCustomRegion={handleAddCustomRegion}
           />
         );
       case 2:
