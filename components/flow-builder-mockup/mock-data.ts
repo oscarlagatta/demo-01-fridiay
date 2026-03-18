@@ -1,8 +1,8 @@
 // Mock Data for Flow Builder Mockup Screens
 
-import { FlowNode, FlowConnection, FlowBuilderState } from './types';
+import { FlowNode, FlowConnection, FlowBuilderState, DEFAULT_SECTION_COUNT, generateDefaultHeaders } from './types';
 
-export const MOCK_SECTION_HEADERS: [string, string, string, string] = [
+export const MOCK_SECTION_HEADERS: string[] = [
   'Origination',
   'Processing',
   'Clearing',
@@ -119,7 +119,8 @@ export const MOCK_CONNECTIONS: FlowConnection[] = [
 export const INITIAL_STATE: FlowBuilderState = {
   currentStep: 1,
   region: null,
-  sectionHeaders: ['Section 1', 'Section 2', 'Section 3', 'Section 4'],
+  sectionCount: DEFAULT_SECTION_COUNT,
+  sectionHeaders: generateDefaultHeaders(DEFAULT_SECTION_COUNT),
   nodes: [],
   connections: [],
   isGenerating: false,
@@ -128,6 +129,7 @@ export const INITIAL_STATE: FlowBuilderState = {
 export const MOCK_COMPLETE_STATE: FlowBuilderState = {
   currentStep: 6,
   region: 'US',
+  sectionCount: 4,
   sectionHeaders: MOCK_SECTION_HEADERS,
   nodes: MOCK_NODES,
   connections: MOCK_CONNECTIONS,

@@ -1,12 +1,17 @@
 // Flow Builder Types
 
+// Section count constraints
+export const MIN_SECTIONS = 2;
+export const MAX_SECTIONS = 8;
+export const DEFAULT_SECTION_COUNT = 4;
+
 export interface FlowNode {
   id: string;
   appId: string;
   appName: string;
   description: string;
   type: 'Internal' | 'External';
-  sectionIndex: 0 | 1 | 2 | 3;
+  sectionIndex: number;
   orderInSection: number;
   xPosition?: number;
   yPosition?: number;
@@ -21,37 +26,59 @@ export interface FlowConnection {
 export interface FlowBuilderState {
   currentStep: 1 | 2 | 3 | 4 | 5 | 6;
   region: string | null;
-  sectionHeaders: [string, string, string, string];
+  sectionCount: number;
+  sectionHeaders: string[];
   nodes: FlowNode[];
   connections: FlowConnection[];
   isGenerating: boolean;
 }
 
+// Helper to generate default headers based on section count
+export function generateDefaultHeaders(count: number): string[] {
+  const defaultNames = [
+    'Initiation',
+    'Processing',
+    'Clearing',
+    'Settlement',
+    'Confirmation',
+    'Archival',
+    'Audit',
+    'Reporting',
+  ];
+  return Array.from({ length: count }, (_, i) => defaultNames[i] || `Section ${i + 1}`);
+}
+
 export interface SectionPosition {
-  SECTION_1_X: number;
-  SECTION_2_X: number;
-  SECTION_3_X: number;
-  SECTION_4_X: number;
   HEADER_Y: number;
   FIRST_NODE_Y: number;
   NODE_WIDTH: number;
   NODE_HEIGHT: number;
   NODE_GAP_Y: number;
   SECTION_GAP_X: number;
+  CANVAS_PADDING: number;
 }
 
 export const SECTION_POSITIONS: SectionPosition = {
-  SECTION_1_X: 50,
-  SECTION_2_X: 450,
-  SECTION_3_X: 850,
-  SECTION_4_X: 1250,
   HEADER_Y: 20,
   FIRST_NODE_Y: 100,
   NODE_WIDTH: 294,
   NODE_HEIGHT: 174,
   NODE_GAP_Y: 26,
   SECTION_GAP_X: 106,
+  CANVAS_PADDING: 50,
 };
+
+// Calculate X position for a section based on index and total sections
+export function getSectionXPosition(sectionIndex: number): number {
+  const { NODE_WIDTH, SECTION_GAP_X, CANVAS_PADDING } = SECTION_POSITIONS;
+  return CANVAS_PADDING + sectionIndex * (NODE_WIDTH + SECTION_GAP_X);
+}
+
+// Calculate canvas width based on section count
+export function getCanvasWidth(sectionCount: number): number {
+  const { NODE_WIDTH, SECTION_GAP_X, CANVAS_PADDING } = SECTION_POSITIONS;
+  return CANVAS_PADDING * 2 + sectionCount * NODE_WIDTH + (sectionCount - 1) * SECTION_GAP_X;
+}
 
 export interface Region {
   id: string;

@@ -30,7 +30,7 @@ import { getNodesBySection } from './mock-data';
 import { cn } from '@/lib/utils';
 
 interface StepNodeConfigurationProps {
-  sectionHeaders: [string, string, string, string];
+  sectionHeaders: string[];
   nodes: FlowNode[];
   onAddNode: (node: Omit<FlowNode, 'id' | 'xPosition' | 'yPosition'>) => void;
   onDeleteNode: (nodeId: string) => void;
@@ -52,7 +52,7 @@ export function StepNodeConfiguration({
   });
 
   const handleAddNode = () => {
-    const sectionIndex = parseInt(activeSection) as 0 | 1 | 2 | 3;
+    const sectionIndex = parseInt(activeSection);
     const sectionNodes = getNodesBySection(nodes, sectionIndex);
 
     onAddNode({
@@ -79,7 +79,7 @@ export function StepNodeConfiguration({
       </div>
 
       <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="flex w-full flex-wrap gap-1" style={{ gridTemplateColumns: `repeat(${Math.min(sectionHeaders.length, 4)}, 1fr)` }}>
           {sectionHeaders.map((header, index) => {
             const sectionNodes = getNodesBySection(nodes, index);
             return (
@@ -242,7 +242,7 @@ export function StepNodeConfiguration({
         })}
       </Tabs>
 
-      <div className="grid grid-cols-4 gap-2 rounded-lg border bg-muted/30 p-3">
+      <div className="grid gap-2 rounded-lg border bg-muted/30 p-3" style={{ gridTemplateColumns: `repeat(${Math.min(sectionHeaders.length, 4)}, 1fr)` }}>
         {sectionHeaders.map((header, index) => {
           const count = getNodesBySection(nodes, index).length;
           return (

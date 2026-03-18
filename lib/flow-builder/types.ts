@@ -9,6 +9,11 @@
 // Core Data Types
 // ============================================
 
+// Section count constraints
+export const MIN_SECTIONS = 2;
+export const MAX_SECTIONS = 8;
+export const DEFAULT_SECTION_COUNT = 4;
+
 export interface FlowNode {
   id: string;
   appId: string;
@@ -16,7 +21,7 @@ export interface FlowNode {
   mappedAppId?: string;
   description: string;
   type: 'Internal' | 'External' | null;
-  sectionIndex: 0 | 1 | 2 | 3;
+  sectionIndex: number;
   orderInSection: number;
   nodeWidth: number;
   nodeHeight: number;
@@ -34,7 +39,8 @@ export interface FlowConfiguration {
   id?: string;
   region: string;
   area?: string;
-  sectionHeaders: [string, string, string, string];
+  sectionCount: number;
+  sectionHeaders: string[];
   nodes: FlowNode[];
   connections: FlowConnection[];
   createdAt?: string;
@@ -51,7 +57,8 @@ export interface FlowBuilderState {
   currentStep: WizardStep;
   region: string | null;
   area: string;
-  sectionHeaders: [string, string, string, string];
+  sectionCount: number;
+  sectionHeaders: string[];
   nodes: FlowNode[];
   connections: FlowConnection[];
   isGenerating: boolean;
@@ -64,7 +71,7 @@ export interface FlowBuilderState {
 // ============================================
 
 export interface PositionConfig {
-  sectionXPositions: [number, number, number, number];
+  canvasPadding: number;
   headerY: number;
   firstNodeY: number;
   defaultNodeWidth: number;
@@ -74,7 +81,7 @@ export interface PositionConfig {
 }
 
 export const DEFAULT_POSITION_CONFIG: PositionConfig = {
-  sectionXPositions: [50, 450, 850, 1250],
+  canvasPadding: 50,
   headerY: 20,
   firstNodeY: 100,
   defaultNodeWidth: 294,
@@ -82,6 +89,31 @@ export const DEFAULT_POSITION_CONFIG: PositionConfig = {
   nodeGapY: 26,
   sectionGapX: 106,
 };
+
+// Helper to calculate X position for a section
+export function getSectionXPosition(sectionIndex: number, config: PositionConfig = DEFAULT_POSITION_CONFIG): number {
+  return config.canvasPadding + sectionIndex * (config.defaultNodeWidth + config.sectionGapX);
+}
+
+// Helper to calculate canvas width based on section count
+export function getCanvasWidth(sectionCount: number, config: PositionConfig = DEFAULT_POSITION_CONFIG): number {
+  return config.canvasPadding * 2 + sectionCount * config.defaultNodeWidth + (sectionCount - 1) * config.sectionGapX;
+}
+
+// Helper to generate default headers based on section count
+export function generateDefaultHeaders(count: number): string[] {
+  const defaultNames = [
+    'Initiation',
+    'Processing',
+    'Clearing',
+    'Settlement',
+    'Confirmation',
+    'Archival',
+    'Audit',
+    'Reporting',
+  ];
+  return Array.from({ length: count }, (_, i) => defaultNames[i] || `Section ${i + 1}`);
+}
 
 export interface RegionOption {
   id: string;
@@ -95,12 +127,7 @@ export const DEFAULT_REGIONS: RegionOption[] = [
   { id: 'APAC', name: 'Asia Pacific', description: 'APAC Regional Flow' },
 ];
 
-export const DEFAULT_SECTION_HEADERS: [string, string, string, string] = [
-  'Section 1',
-  'Section 2',
-  'Section 3',
-  'Section 4',
-];
+export const DEFAULT_SECTION_HEADERS: string[] = generateDefaultHeaders(DEFAULT_SECTION_COUNT);
 
 // ============================================
 // Action Types (for reducer pattern)
@@ -110,6 +137,7 @@ export type FlowBuilderAction =
   | { type: 'SET_STEP'; payload: WizardStep }
   | { type: 'SET_REGION'; payload: string }
   | { type: 'SET_AREA'; payload: string }
+  | { type: 'SET_SECTION_COUNT'; payload: number }
   | { type: 'SET_HEADER'; payload: { index: number; value: string } }
   | { type: 'ADD_NODE'; payload: Omit<FlowNode, 'id' | 'xPosition' | 'yPosition'> }
   | { type: 'UPDATE_NODE'; payload: { id: string; updates: Partial<FlowNode> } }
